@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200">
+  <title>OG Image – 순환기 던전 RPG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #d4af37;
+      --gold-dark: #a87e15;
+      --gold-glow: rgba(212,175,55,0.45);
+      --crimson: #8b0000;
+      --crimson-light: #ff4545;
+      --mana: #2196f3;
+      --text-primary: #e8e6d8;
+      --text-secondary: #a09eb0;
+      --bg-dark: #040409;
+      --border: rgba(255,255,255,0.09);
+      --font-serif: 'Cinzel', serif;
+      --font-sans: 'Inter', 'Noto Sans KR', sans-serif;
+      --ch1: #8b0000; --ch2: #0d7377; --ch3: #5d3a9b;
+      --ch4: #7a8c2a; --ch5: #c9a227;
+      --anat: #ff4545; --phys: #00e5ff; --clin: #ffdf00;
+    }
+
+    html, body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background: var(--bg-dark);
+      font-family: var(--font-sans);
+      color: var(--text-primary);
+    }
+
+    /* ── Canvas ── */
+    .canvas {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+      background:
+        radial-gradient(circle at 8% 12%, rgba(255,69,69,0.12) 0%, transparent 38%),
+        radial-gradient(circle at 92% 88%, rgba(212,175,55,0.12) 0%, transparent 38%),
+        radial-gradient(circle at 50% 50%, #080812 0%, #030307 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 20px 22px 16px;
+    }
+
+    /* subtle grid texture */
+    .canvas::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* ── TOP HEADER ── */
+    .header {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, rgba(18,18,32,0.92), rgba(8,8,16,0.96));
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--gold);
+      border-radius: 12px;
+      padding: 12px 18px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .profile-box { display: flex; align-items: center; gap: 12px; }
+
+    .avatar {
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 12px var(--gold-glow);
+      background: radial-gradient(circle, #252542, #0d0d18);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .avatar svg { width: 40px; height: 40px; }
+    .level-bubble {
+      position: absolute; bottom: -4px; right: -4px;
+      background: var(--gold); color: #000;
+      font-size: 10px; font-weight: 900;
+      border-radius: 50%; width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid #000;
+    }
+
+    .char-name {
+      font-family: var(--font-serif);
+      font-size: 18px; font-weight: 700; color: #fff;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .title-tag {
+      font-size: 10px; color: var(--gold);
+      background: rgba(212,175,55,0.15);
+      border: 1px solid var(--gold);
+      padding: 1px 6px; border-radius: 4px;
+      font-family: var(--font-sans); font-weight: 700;
+    }
+    .class-tag { font-size: 11px; color: var(--text-secondary); font-style: italic; }
+
+    /* XP bar */
+    .xp-col { display: flex; flex-direction: column; gap: 5px; }
+    .xp-row { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; }
+    .xp-lbl { color: var(--text-secondary); }
+    .xp-val { color: var(--gold); }
+    .bar-track {
+      height: 13px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--crimson) 0%, var(--gold) 100%);
+      border-radius: 7px;
+    }
+
+    /* top stats */
+    .top-stats { display: flex; gap: 10px; }
+    .stat-box {
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 7px;
+      padding: 6px 14px;
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-secondary);
+      min-width: 80px;
+    }
+    .stat-val { font-weight: 900; font-size: 14px; color: var(--gold); margin-top: 1px; }
+    .stat-val.danger { color: var(--crimson-light); }
+
+    /* ── MAIN ROW ── */
+    .main-row {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── ARENA ── */
+    .arena {
+      background: linear-gradient(180deg, rgba(20,20,36,0.92) 0%, rgba(10,10,20,0.98) 100%);
+      border: 2px solid rgba(255,69,69,0.45);
+      box-shadow: 0 0 22px rgba(255,69,69,0.18);
+      border-radius: 14px;
+      padding: 16px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .arena-header {
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: var(--font-serif); font-size: 10px;
+      color: var(--crimson-light); font-weight: 800; letter-spacing: 1px;
+    }
+    .arena-header .boss-label {
+      background: rgba(255,69,69,0.15);
+      border: 1px solid var(--crimson-light);
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .wave-info { color: var(--gold); font-size: 10px; }
+
+    .arena-fighters {
+      display: grid;
+      grid-template-columns: 1.3fr 0.85fr 1.3fr;
+      gap: 10px;
+      align-items: center;
+      flex: 1;
+    }
+
+    /* Fighter */
+    .fighter { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+
+    .fighter-avatar {
+      width: 82px; height: 82px;
+      border-radius: 11px;
+      background: radial-gradient(circle, rgba(255,255,255,0.04), rgba(0,0,0,0.5));
+      border: 2px solid rgba(212,175,55,0.35);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4), 0 0 18px rgba(212,175,55,0.12);
+    }
+    .fighter-avatar.monster-av {
+      border-color: rgba(255,69,69,0.55);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4), 0 0 18px rgba(255,69,69,0.18);
+    }
+    .fighter-avatar svg { width: 64px; height: 64px; }
+
+    .fighter-name-row { display: flex; align-items: center; gap: 5px; }
+    .f-name { font-family: var(--font-serif); font-size: 13px; font-weight: 700; color: #fff; }
+    .elem-badge {
+      font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px;
+      background: var(--anat); color: #fff;
+    }
+    .elem-badge.phys { background: transparent; color: var(--phys); border: 1px solid var(--phys); }
+    .elem-badge.clin { background: var(--clin); color: #000; }
+
+    .fighter-bars { width: 148px; display: flex; flex-direction: column; gap: 4px; }
+    .bar-label { font-size: 8px; color: var(--text-secondary); font-weight: 800; display: flex; justify-content: space-between; padding: 0 3px; }
+    .bar-track-sm { height: 9px; background: rgba(0,0,0,0.65); border-radius: 5px; border: 1px solid rgba(255,255,255,0.04); overflow: hidden; }
+    .bar-hp { height: 100%; background: var(--crimson-light); border-radius: 5px; transition: width 0.2s; }
+    .bar-mp { height: 100%; background: var(--mana); border-radius: 5px; }
+    .bar-hp.enemy { background: #ff3366; }
+
+    /* Arena center */
+    .arena-center {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    }
+
+    .element-wheel {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      font-family: var(--font-serif); font-size: 8px; font-weight: 700; color: var(--gold);
+      text-align: center;
+    }
+    .elem-dot {
+      position: absolute;
+      width: 12px; height: 12px;
+      border-radius: 50%; border: 1px solid rgba(255,255,255,0.7);
+    }
+    .ed-anat { top: 3px; left: 50%; transform: translateX(-50%); background: var(--anat); }
+    .ed-phys { bottom: 3px; left: 10px; background: var(--phys); }
+    .ed-clin { bottom: 3px; right: 10px; background: var(--clin); }
+
+    /* VS badge */
+    .vs-badge {
+      font-family: var(--font-serif);
+      font-size: 20px; font-weight: 900;
+      color: var(--crimson-light);
+      text-shadow: 0 0 10px rgba(255,69,69,0.6), 0 2px 4px #000;
+      letter-spacing: 1px;
+    }
+
+    /* Skills */
+    .skills-row { display: flex; gap: 7px; }
+    .skill {
+      width: 46px; height: 46px;
+      border-radius: 8px;
+      background: radial-gradient(circle, #222238, #0d0d15);
+      border: 2px solid rgba(255,255,255,0.15);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .skill .key { position: absolute; top: -5px; right: -5px; background: #000; color: var(--gold); border: 1px solid var(--gold); border-radius: 3px; font-size: 7px; font-weight: 900; padding: 0 3px; }
+    .skill .icon { font-size: 16px; }
+    .skill .cost { font-size: 7px; color: var(--mana); font-weight: 700; margin-top: -1px; }
+    .skill.q-sk { border-color: rgba(255,69,69,0.6); box-shadow: 0 0 8px rgba(255,69,69,0.2); }
+    .skill.w-sk { border-color: rgba(0,229,255,0.5); box-shadow: 0 0 8px rgba(0,229,255,0.15); }
+    .skill.e-sk { border-color: rgba(212,175,55,0.6); box-shadow: 0 0 8px rgba(212,175,55,0.2); }
+
+    /* ── SIDEBAR ── */
+    .sidebar { display: flex; flex-direction: column; gap: 10px; }
+
+    .s-card {
+      background: rgba(16,16,28,0.88);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 12px 13px;
+    }
+
+    .s-title {
+      font-family: var(--font-serif);
+      font-size: 11px; font-weight: 700; color: var(--gold);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 6px; margin-bottom: 9px;
+    }
+
+    /* Pomodoro */
+    .pomo-time {
+      font-family: 'Inter', monospace;
+      font-size: 34px; font-weight: 800;
+      text-align: center; letter-spacing: 2px;
+      color: #fff;
+      margin: 4px 0 8px;
+    }
+    .pomo-mode-row { display: flex; justify-content: center; gap: 6px; }
+    .pmode {
+      font-size: 9px; font-weight: 700; padding: 2px 8px;
+      border-radius: 10px; border: 1px solid transparent;
+      color: var(--text-secondary);
+    }
+    .pmode.active { background: rgba(212,175,55,0.15); border-color: var(--gold); color: var(--gold); }
+    .pomo-btns { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 8px; }
+    .pbtn {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      color: #fff; font-size: 10px; padding: 5px 4px; border-radius: 5px; font-weight: 600;
+      text-align: center;
+    }
+    .pbtn.play { background: radial-gradient(circle, var(--crimson), #500000); border-color: var(--crimson-light); }
+
+    /* Equip grid */
+    .equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .eq-item {
+      background: rgba(0,0,0,0.32); border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 7px; padding: 7px; display: flex; flex-direction: column; gap: 3px;
+    }
+    .eq-item.epic { border-color: rgba(156,39,176,0.6); }
+    .eq-item.legend { border-color: rgba(255,152,0,0.65); }
+    .eq-item.rare { border-color: rgba(33,150,243,0.6); }
+    .eq-item.mythic { border-color: rgba(255,69,69,0.7); }
+    .eq-icon { font-size: 18px; }
+    .eq-name { font-size: 9px; font-weight: 900; color: #fff; }
+    .eq-stat { font-size: 8px; color: var(--gold); font-weight: 700; }
+
+    /* ── LECTURES ROW (bottom) ── */
+    .lectures-row {
+      position: relative; z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .lec-card {
+      background: rgba(16,16,28,0.88);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-left: 4px solid var(--ch1);
+      border-radius: 9px;
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .lec-card:nth-child(2) { border-left-color: var(--ch2); }
+    .lec-card:nth-child(3) { border-left-color: var(--ch3); }
+
+    .lec-top { display: flex; align-items: flex-start; gap: 7px; }
+    .ch-badge {
+      font-family: var(--font-serif); font-size: 9px; color: #fff;
+      padding: 1px 6px; border-radius: 3px; background: var(--ch1);
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .lec-card:nth-child(2) .ch-badge { background: var(--ch2); }
+    .lec-card:nth-child(3) .ch-badge { background: var(--ch3); }
+
+    .lec-title { font-family: var(--font-serif); font-size: 12px; font-weight: 700; color: #fff; line-height: 1.3; }
+    .lec-sub { font-size: 9px; color: var(--text-secondary); }
+
+    .checks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .check-row {
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.03);
+      padding: 4px 7px; border-radius: 5px; font-size: 9px;
+    }
+    .check-row.done {
+      background: rgba(212,175,55,0.05);
+      border-color: rgba(212,175,55,0.15);
+      color: var(--gold);
+    }
+    .checkmark { font-size: 10px; }
+
+    /* XP tag pill */
+    .xp-pill { margin-left: auto; font-size: 7px; color: var(--gold); font-weight: 700; background: rgba(212,175,55,0.12); padding: 1px 4px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── WATERMARK / BRANDING ── */
+    .brand {
+      position: absolute; bottom: 14px; right: 22px; z-index: 2;
+      font-family: var(--font-serif); font-size: 11px; color: rgba(212,175,55,0.55);
+      letter-spacing: 1px;
+    }
+
+    /* floating scanline vignette */
+    .vignette {
+      position: absolute; inset: 0; pointer-events: none; z-index: 5;
+      background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%);
+    }
+  </style>
+</head>
+<body>
+<div class="canvas">
+  <div class="vignette"></div>
+
+  <!-- ══════ HEADER ══════ -->
+  <div class="header">
+    <div class="profile-box">
+      <div class="avatar">
+        <!-- Cardiologist-style icon -->
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#c9a227" stroke-width="2"/>
+          <polygon points="50,20 62,40 85,45 68,62 72,85 50,72 28,85 32,62 15,45 38,40" fill="#c9a227" opacity="0.55" stroke="#d4af37" stroke-width="1.5"/>
+          <circle cx="50" cy="50" r="11" fill="#fff" opacity="0.88"/>
+        </svg>
+        <div class="level-bubble">7</div>
+      </div>
+      <div>
+        <div class="char-name">
+          순환기 내과의
+          <span class="title-tag">심장의 수호자</span>
+        </div>
+        <div class="class-tag">순환기내과의 (Cardiologist)</div>
+      </div>
+    </div>
+
+    <div class="xp-col">
+      <div class="xp-row">
+        <span class="xp-lbl">학습 수련 진척도 (XP)</span>
+        <span class="xp-val">3,240 / 5,000 XP</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width: 64.8%;"></div>
+      </div>
+    </div>
+
+    <div class="top-stats">
+      <div class="stat-box">
+        <div>보유 골드</div>
+        <div class="stat-val">2,850G</div>
+      </div>
+      <div class="stat-box">
+        <div>학습 연속</div>
+        <div class="stat-val">12일</div>
+      </div>
+      <div class="stat-box">
+        <div>최종 결전 D-Day</div>
+        <div class="stat-val danger">D-3</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ MAIN ROW ══════ -->
+  <div class="main-row">
+
+    <!-- ── BATTLE ARENA ── -->
+    <div class="arena">
+      <div class="arena-header">
+        <span class="boss-label">⚔ BOSS ENCOUNTER</span>
+        <span style="color:var(--gold);font-size:9px;">대동맥판 협착증 보스전 진행 중</span>
+        <span class="wave-info">Wave 2 / 3</span>
+      </div>
+
+      <div class="arena-fighters">
+        <!-- Character -->
+        <div class="fighter">
+          <div class="fighter-avatar">
+            <svg viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#c9a227" stroke-width="1.5"/>
+              <polygon points="50,22 60,38 78,42 65,56 68,74 50,65 32,74 35,56 22,42 40,38" fill="#c9a227" opacity="0.5" stroke="#d4af37" stroke-width="1"/>
+              <circle cx="50" cy="50" r="10" fill="#fff" opacity="0.85"/>
+              <!-- staff glow -->
+              <line x1="68" y1="22" x2="78" y2="78" stroke="#d4af37" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+              <circle cx="68" cy="22" r="4" fill="#d4af37" opacity="0.9"/>
+            </svg>
+          </div>
+          <div class="fighter-name-row">
+            <span class="f-name">순환기 내과의</span>
+          </div>
+          <div class="fighter-bars">
+            <div>
+              <div class="bar-label"><span>HP</span><span>78 / 120</span></div>
+              <div class="bar-track-sm"><div class="bar-hp" style="width:65%;"></div></div>
+            </div>
+            <div style="margin-top:3px;">
+              <div class="bar-label"><span>MP</span><span>45 / 70</span></div>
+              <div class="bar-track-sm"><div class="bar-mp" style="width:64%;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center -->
+        <div class="arena-center">
+          <div class="element-wheel">
+            <span style="z-index:1;position:relative;">상성</span>
+            <div class="elem-dot ed-anat"></div>
+            <div class="elem-dot ed-phys"></div>
+            <div class="elem-dot ed-clin"></div>
+          </div>
+          <div class="vs-badge">VS</div>
+          <div class="skills-row">
+            <div class="skill q-sk">
+              <div class="key">Q</div>
+              <div class="icon">🗡️</div>
+              <div class="cost">20M</div>
+            </div>
+            <div class="skill w-sk">
+              <div class="key">W</div>
+              <div class="icon">⚡</div>
+              <div class="cost">35M</div>
+            </div>
+            <div class="skill e-sk">
+              <div class="key">E</div>
+              <div class="icon">💉</div>
+              <div class="cost">50M</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monster -->
+        <div class="fighter">
+          <div class="fighter-avatar monster-av">
+            <svg viewBox="0 0 100 100">
+              <!-- Aortic Stenosis boss -->
+              <ellipse cx="50" cy="55" rx="32" ry="28" fill="#3d0000" stroke="#ff4545" stroke-width="1.5"/>
+              <!-- calcification deposits -->
+              <polygon points="50,28 58,44 76,44 62,54 68,70 50,60 32,70 38,54 24,44 42,44" fill="#cc2200" opacity="0.75" stroke="#ff6666" stroke-width="1"/>
+              <!-- stenotic valve ring -->
+              <circle cx="50" cy="50" r="14" fill="none" stroke="#ff9800" stroke-width="2.5" stroke-dasharray="4 3" opacity="0.8"/>
+              <circle cx="50" cy="50" r="6" fill="#ff4545" opacity="0.7"/>
+              <!-- eyes -->
+              <circle cx="42" cy="46" r="4" fill="#ff0000"/><circle cx="58" cy="46" r="4" fill="#ff0000"/>
+              <circle cx="43" cy="45" r="1.5" fill="#fff"/><circle cx="59" cy="45" r="1.5" fill="#fff"/>
+            </svg>
+          </div>
+          <div class="fighter-name-row">
+            <span class="f-name">대동맥판 협착</span>
+            <span class="elem-badge">해부</span>
+          </div>
+          <div class="fighter-bars">
+            <div>
+              <div class="bar-label"><span>Monster HP</span><span>92 / 280</span></div>
+              <div class="bar-track-sm" style="height:11px;"><div class="bar-hp enemy" style="width:32.8%;"></div></div>
+            </div>
+          </div>
+          <!-- floating damage number hint -->
+          <div style="font-family:'Inter',sans-serif;font-weight:900;font-size:20px;color:#fff;text-shadow:0 0 4px #000,0 0 12px rgba(255,255,255,0.7);margin-top:2px;letter-spacing:-0.5px;">-347 ⚔</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SIDEBAR ── -->
+    <div class="sidebar">
+      <!-- Pomodoro -->
+      <div class="s-card">
+        <div class="s-title">⏱ 학습 타이머 (Pomodoro)</div>
+        <div class="pomo-mode-row">
+          <span class="pmode active">집중 25분</span>
+          <span class="pmode">짧은 휴식</span>
+          <span class="pmode">긴 휴식</span>
+        </div>
+        <div class="pomo-time">18:42</div>
+        <div class="pomo-btns">
+          <div class="pbtn">⏮ 리셋</div>
+          <div class="pbtn play">▶ 진행</div>
+          <div class="pbtn">⏭ 스킵</div>
+        </div>
+      </div>
+
+      <!-- Equipment -->
+      <div class="s-card" style="flex:1;">
+        <div class="s-title">🛡 장착 장비</div>
+        <div class="equip-grid">
+          <div class="eq-item legend">
+            <div class="eq-icon">📖</div>
+            <div class="eq-name">해리슨 교재 +5</div>
+            <div class="eq-stat">INT +28 · XP +15%</div>
+          </div>
+          <div class="eq-item epic">
+            <div class="eq-icon">🔬</div>
+            <div class="eq-name">해부 현미경</div>
+            <div class="eq-stat">CRIT +12% · ATK +18</div>
+          </div>
+          <div class="eq-item mythic">
+            <div class="eq-icon">💊</div>
+            <div class="eq-name">에피네프린 주사기</div>
+            <div class="eq-stat">SPD ×2 · MP+20</div>
+          </div>
+          <div class="eq-item rare">
+            <div class="eq-icon">🩺</div>
+            <div class="eq-name">청진기 Mk.II</div>
+            <div class="eq-stat">DEF +12 · HP +25</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ LECTURE CARDS ══════ -->
+  <div class="lectures-row">
+    <!-- Card 1 -->
+    <div class="lec-card">
+      <div class="lec-top">
+        <span class="ch-badge">1장</span>
+        <div>
+          <div class="lec-title">심장의 해부학적 구조</div>
+          <div class="lec-sub">Prof. 김철수 · 2024.05.14</div>
+        </div>
+      </div>
+      <div class="checks-grid">
+        <div class="check-row done"><span class="checkmark">✅</span> 강의 1회독<span class="xp-pill">+50XP</span></div>
+        <div class="check-row done"><span class="checkmark">✅</span> 핵심 개념 정리<span class="xp-pill">+80XP</span></div>
+        <div class="check-row done"><span class="checkmark">✅</span> 문제풀이<span class="xp-pill">+100XP</span></div>
+        <div class="check-row"><span class="checkmark">⬜</span> 2회독 완료<span class="xp-pill">+120XP</span></div>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="lec-card">
+      <div class="lec-top">
+        <span class="ch-badge">2장</span>
+        <div>
+          <div class="lec-title">심장 주기와 압력-용적 관계</div>
+          <div class="lec-sub">Prof. 이영희 · 2024.05.16</div>
+        </div>
+      </div>
+      <div class="checks-grid">
+        <div class="check-row done"><span class="checkmark">✅</span> 강의 1회독<span class="xp-pill">+50XP</span></div>
+        <div class="check-row"><span class="checkmark">⬜</span> 핵심 개념 정리<span class="xp-pill">+80XP</span></div>
+        <div class="check-row"><span class="checkmark">⬜</span> 문제풀이<span class="xp-pill">+100XP</span></div>
+        <div class="check-row"><span class="checkmark">⬜</span> 2회독 완료<span class="xp-pill">+120XP</span></div>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="lec-card">
+      <div class="lec-top">
+        <span class="ch-badge">3장</span>
+        <div>
+          <div class="lec-title">판막 질환의 영상 진단</div>
+          <div class="lec-sub">Prof. 박민준 · 2024.05.20</div>
+        </div>
+      </div>
+      <div class="checks-grid">
+        <div class="check-row"><span class="checkmark">⬜</span> 강의 1회독<span class="xp-pill">+50XP</span></div>
+        <div class="check-row"><span class="checkmark">⬜</span> 핵심 개념 정리<span class="xp-pill">+80XP</span></div>
+        <div class="check-row"><span class="checkmark">⬜</span> 문제풀이<span class="xp-pill">+100XP</span></div>
+        <div class="check-row"><span class="checkmark">⬜</span> 2회독 완료<span class="xp-pill">+120XP</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="brand">순환기 던전 RPG · 대확장 에디션</div>
+</div>
+</body>
+</html>
