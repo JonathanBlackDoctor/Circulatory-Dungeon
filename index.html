@@ -3891,6 +3891,17 @@
         UI.render();
       },
 
+      toggleActivity(lecId, actId) {
+        const lec = this.state.lectures[lecId];
+        if (!lec) return;
+        if (!lec.completed) lec.completed = {};
+        lec.completed[actId] = !lec.completed[actId];
+        this.recalculateTotalXP();
+        this.checkLevelUp();
+        this.save();
+        UI.render();
+      },
+
       setMemo(lecId, txt) {
         if (!this.state.lectures[lecId]) return;
         this.state.lectures[lecId].memo = txt;
