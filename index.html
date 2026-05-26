@@ -1,0 +1,4798 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>순환기 중간고사 RPG 대시보드 : 대확장 에디션</title>
+  
+  <!-- Fonts: Cinzel & Noto Serif KR for RPG style headers, Inter & Noto Sans KR for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;700;900&family=Noto+Serif+KR:wght@500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #040409;
+      --bg-card: rgba(16, 16, 28, 0.85);
+      --bg-card-hover: rgba(26, 26, 44, 0.95);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-color-hover: rgba(255, 255, 255, 0.18);
+      
+      --gold: #d4af37;
+      --gold-dark: #a87e15;
+      --gold-glow: rgba(212, 175, 55, 0.45);
+      --crimson: #8b0000;
+      --crimson-light: #ff4545;
+      --crimson-glow: rgba(255, 69, 69, 0.6);
+      --mana-color: #2196f3;
+      --mana-glow: rgba(33, 150, 243, 0.5);
+      
+      --text-primary: #e8e6d8;
+      --text-secondary: #a09eb0;
+      --text-disabled: #5a5a6e;
+      
+      --font-serif: 'Cinzel', 'Noto Serif KR', serif;
+      --font-sans: 'Inter', 'Noto Sans KR', sans-serif;
+      
+      /* Element Colors */
+      --elem-anatomy: #ff4545;     /* Anatomy: Crimson */
+      --elem-physiology: #00e5ff;  /* Physiology: Cyan */
+      --elem-clinical: #ffdf00;    /* Clinical: Yellow/Gold */
+      
+      /* Chapter Colors */
+      --ch1-color: #8b0000; 
+      --ch2-color: #0d7377; 
+      --ch3-color: #5d3a9b; 
+      --ch4-color: #7a8c2a; 
+      --ch5-color: #c9a227; 
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 5% 5%, rgba(255, 69, 69, 0.08) 0%, transparent 35%),
+        radial-gradient(circle at 95% 95%, rgba(212, 175, 55, 0.08) 0%, transparent 35%),
+        radial-gradient(circle at 50% 50%, #080812 0%, #030307 100%);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      overflow-x: hidden;
+      transition: outline 0.3s;
+    }
+    
+    body.under-pressure {
+      outline: 4px solid var(--crimson);
+      outline-offset: -4px;
+      animation: pressurePulse 2s infinite;
+    }
+
+    @keyframes pressurePulse {
+      0% { outline-color: rgba(139, 0, 0, 0.3); }
+      50% { outline-color: rgba(255, 69, 69, 0.7); }
+      100% { outline-color: rgba(139, 0, 0, 0.3); }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030307;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(212, 175, 55, 0.2);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(212, 175, 55, 0.4);
+    }
+
+    .app-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Floating damage numbers */
+    .damage-floater {
+      position: absolute;
+      font-family: 'Inter', sans-serif;
+      font-weight: 900;
+      font-size: 26px;
+      color: #fff;
+      text-shadow: 0 0 4px #000, 0 0 10px rgba(255,255,255,0.9);
+      pointer-events: none;
+      animation: floatUp 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      z-index: 100;
+      white-space: nowrap;
+    }
+    
+    .damage-floater.crit {
+      font-size: 38px;
+      color: var(--gold);
+      text-shadow: 0 0 6px #000, 0 0 20px rgba(212, 175, 55, 0.9);
+    }
+    
+    .damage-floater.weakness {
+      color: #ff3366;
+      font-style: italic;
+    }
+    
+    .damage-floater.resisted {
+      color: #888899;
+      font-size: 18px;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.6) rotate(-5deg); opacity: 1; }
+      50% { transform: translateY(-40px) scale(1.1) rotate(5deg); opacity: 1; }
+      100% { transform: translateY(-90px) scale(0.8) rotate(0deg); opacity: 0; }
+    }
+
+    /* Screen Shake */
+    .shake-target.shake {
+      animation: screenShake 0.15s ease-in-out infinite;
+    }
+
+    @keyframes screenShake {
+      0% { transform: translate(1px, 1px) rotate(0deg); }
+      20% { transform: translate(-2px, -1px) rotate(-1deg); }
+      40% { transform: translate(-1px, 2px) rotate(1deg); }
+      60% { transform: translate(2px, -2px) rotate(0deg); }
+      80% { transform: translate(-2px, 1px) rotate(-1deg); }
+      100% { transform: translate(1px, 2px) rotate(1deg); }
+    }
+
+    /* Header */
+    header.app-header {
+      background: linear-gradient(135deg, rgba(16, 16, 28, 0.9) 0%, rgba(8, 8, 16, 0.95) 100%);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-bottom: 2px solid var(--gold);
+      border-radius: 12px;
+      padding: 16px 24px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 20px;
+      align-items: center;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    }
+
+    .profile-box {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 10px var(--gold-glow);
+      background: radial-gradient(circle, #252542 0%, #0d0d18 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .avatar-wrapper svg {
+      width: 44px;
+      height: 44px;
+    }
+
+    .level-bubble {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      background: var(--gold);
+      color: #000;
+      font-size: 11px;
+      font-weight: 900;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #000;
+    }
+
+    .character-info-text h2 {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .active-title-tag {
+      font-size: 11px;
+      color: var(--gold);
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--gold);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: var(--font-sans);
+      font-weight: 700;
+    }
+
+    .class-desc-tag {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* XP Progress Bar */
+    .header-middle {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .xp-info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    
+    .xp-lbl { color: var(--text-secondary); }
+    .xp-vals { color: var(--gold); }
+
+    .bar-container {
+      height: 14px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 7px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--crimson) 0%, var(--gold) 100%);
+      width: 0%;
+      transition: width 0.4s;
+    }
+
+    /* Top Stats list */
+    .top-stats-row {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+    }
+    .top-stat-item {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 6px 12px;
+      text-align: center;
+    }
+    .top-stat-item .val {
+      font-family: 'Inter', sans-serif;
+      font-weight: 900;
+      color: var(--gold);
+      font-size: 14px;
+    }
+
+    /* Battle Arena Box */
+    .battle-arena-card {
+      background: linear-gradient(180deg, rgba(20, 20, 36, 0.9) 0%, rgba(10, 10, 20, 0.98) 100%);
+      border: 2px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .battle-arena-card.boss-active {
+      border-color: var(--crimson-light);
+      box-shadow: 0 0 25px rgba(255, 69, 69, 0.3);
+    }
+    
+    .battle-arena-card.raid-active {
+      border-color: #ff9800;
+      box-shadow: 0 0 35px rgba(255, 152, 0, 0.4);
+      background: linear-gradient(180deg, #1f0f00 0%, #0a0500 100%);
+    }
+
+    .arena-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1.5fr;
+      gap: 20px;
+      align-items: center;
+      min-height: 180px;
+    }
+
+    /* Fighter profile (left/right) */
+    .arena-fighter {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+    
+    .arena-fighter.character {
+      transition: transform 0.15s ease-out;
+    }
+    
+    .arena-fighter.character.attacking {
+      transform: translateX(120px) scale(1.1);
+    }
+
+    .arena-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 12px;
+      background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.4) 100%);
+      border: 2px solid var(--border-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    
+    .arena-fighter.monster .arena-avatar {
+      border-color: var(--crimson);
+    }
+    
+    .arena-avatar svg {
+      width: 70px;
+      height: 70px;
+    }
+
+    .fighter-name {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+    }
+
+    .fighter-bars {
+      width: 160px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .arena-bar-outer {
+      height: 10px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 5px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .arena-bar-inner {
+      height: 100%;
+      transition: width 0.2s;
+    }
+    
+    .arena-bar-inner.hp { background-color: var(--crimson-light); }
+    .arena-bar-inner.mp { background-color: var(--mana-color); }
+    
+    .fighter-bar-label {
+      font-size: 9px;
+      color: var(--text-secondary);
+      font-weight: 800;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+
+    /* Middle: Element and Skill Buttons */
+    .arena-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .element-guide-circle {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      text-align: center;
+      color: var(--gold);
+      font-family: var(--font-serif);
+      font-weight: 700;
+      position: relative;
+    }
+
+    .element-dot {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid #fff;
+    }
+    
+    .element-dot.anat { top: 4px; left: 33px; background: var(--elem-anatomy); }
+    .element-dot.phys { bottom: 4px; left: 8px; background: var(--elem-physiology); }
+    .element-dot.clin { bottom: 4px; right: 8px; background: var(--elem-clinical); }
+
+    .skills-strip {
+      display: flex;
+      gap: 8px;
+    }
+
+    .skill-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      background: radial-gradient(circle, #222238 0%, #0d0d15 100%);
+      border: 2px solid var(--text-disabled);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+      transition: all 0.2s;
+    }
+
+    .skill-btn:hover {
+      border-color: var(--gold);
+      transform: scale(1.05);
+    }
+    
+    .skill-btn.disabled {
+      filter: grayscale(1);
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .skill-btn .key-tip {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #000;
+      color: var(--gold);
+      border: 1px solid var(--gold);
+      border-radius: 4px;
+      font-size: 8px;
+      font-weight: 900;
+      padding: 0 4px;
+    }
+
+    .skill-btn .cooldown-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.75);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: var(--crimson-light);
+      font-size: 14px;
+      z-index: 10;
+    }
+
+    .skill-btn .skill-icon {
+      font-size: 18px;
+    }
+    
+    .skill-btn .mp-cost {
+      font-size: 8px;
+      color: var(--mana-color);
+      font-weight: 700;
+      margin-top: -2px;
+    }
+
+    /* Threat Indicator / Emergency Raid */
+    .raid-alert-banner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(90deg, #ff9800 0%, #e65100 100%);
+      color: #000;
+      font-family: var(--font-serif);
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-align: center;
+      padding: 2px 0;
+      z-index: 5;
+      animation: pulse 1s infinite alternate;
+      display: none;
+    }
+
+    .element-badge {
+      display: inline-block;
+      font-size: 9px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      color: #000;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+    
+    .element-badge.anatomy { background-color: var(--elem-anatomy); color: #fff; }
+    .element-badge.physiology { background-color: var(--elem-physiology); }
+    .element-badge.clinical { background-color: var(--elem-clinical); }
+
+    /* Fainted Banner Overlay */
+    .faint-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(139, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    
+    .faint-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .faint-title {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--crimson-light);
+      text-shadow: 0 0 15px #000;
+      margin-bottom: 8px;
+    }
+
+    .faint-desc {
+      font-size: 13px;
+      color: #fff;
+      margin-bottom: 16px;
+      text-align: center;
+      text-shadow: 0 2px 5px #000;
+    }
+
+    /* Main Grid Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* Controls and Tabs */
+    .controls-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .tabs-wrapper {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: radial-gradient(circle, #2a2a4f 0%, #121226 100%);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .search-filter-wrapper {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    .filters-checkboxes {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .filters-checkboxes label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    /* Lectures list */
+    .lectures-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .lecture-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1.8fr 1fr;
+      gap: 16px;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .lecture-card:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Chapter colors */
+    .lecture-card[data-chapter="1"] { border-left-color: var(--ch1-color); }
+    .lecture-card[data-chapter="2"] { border-left-color: var(--ch2-color); }
+    .lecture-card[data-chapter="3"] { border-left-color: var(--ch3-color); }
+    .lecture-card[data-chapter="4"] { border-left-color: var(--ch4-color); }
+    .lecture-card[data-chapter="5"] { border-left-color: var(--ch5-color); }
+
+    .lecture-card.completed {
+      border-color: var(--gold);
+      box-shadow: 0 0 12px rgba(212,175,55,0.1);
+    }
+
+    .card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .chapter-badge {
+      font-family: var(--font-serif);
+      font-size: 10px;
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 3px;
+      align-self: flex-start;
+    }
+    .chapter-badge.ch1 { background-color: var(--ch1-color); }
+    .chapter-badge.ch2 { background-color: var(--ch2-color); }
+    .chapter-badge.ch3 { background-color: var(--ch3-color); }
+    .chapter-badge.ch4 { background-color: var(--ch4-color); }
+    .chapter-badge.ch5 { background-color: var(--ch5-color); }
+
+    .card-title {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-subtitle {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .card-checklist {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.02);
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+
+    .check-label:hover {
+      background: rgba(255,255,255,0.04);
+    }
+
+    .check-label.active {
+      background: rgba(212, 175, 55, 0.05);
+      border-color: rgba(212,175,55,0.15);
+    }
+    
+    .check-label.active span {
+      color: var(--gold);
+      text-decoration: line-through;
+      text-decoration-color: rgba(212,175,55,0.4);
+    }
+
+    .check-label .xp-tag {
+      margin-left: auto;
+      font-size: 8px;
+      color: var(--gold);
+      font-weight: 700;
+      background: rgba(212,175,55,0.1);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .card-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bonus-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 10px;
+    }
+
+    .bonus-btns {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-small {
+      width: 16px;
+      height: 16px;
+      background: #252538;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 2px;
+      user-select: none;
+    }
+
+    .btn-small:hover {
+      background: #3a3a55;
+      border-color: var(--gold);
+    }
+
+    .bonus-val {
+      font-family: 'Inter', sans-serif;
+      font-weight: 800;
+      color: var(--gold);
+      min-width: 12px;
+      text-align: center;
+    }
+
+    .card-memo {
+      width: 100%;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 5px;
+      padding: 4px 8px;
+      color: var(--text-primary);
+      font-size: 10px;
+      resize: vertical;
+      min-height: 32px;
+    }
+
+    .card-memo:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    /* Sidebar cards */
+    .sidebar-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .sidebar-card-title {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Pomodoro */
+    .pomo-time {
+      font-family: 'Inter', monospace;
+      font-size: 38px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 2px;
+      margin: 8px 0;
+    }
+
+    .pomo-btns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .pomo-btn {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      font-size: 11px;
+      padding: 6px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
+    .pomo-btn.play {
+      background: radial-gradient(circle, var(--crimson) 0%, #600000 100%);
+      border-color: var(--crimson-light);
+    }
+
+    .pomo-modes {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .pomo-mode-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      font-size: 10px;
+      padding: 2px 10px;
+      cursor: pointer;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .pomo-mode-btn.active {
+      background: rgba(212, 175, 55, 0.15);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ER Emergency Raid */
+    .raid-card {
+      background: linear-gradient(135deg, #1b0c05 0%, #0c0502 100%);
+      border: 1px solid #ff9800;
+      box-shadow: 0 0 15px rgba(255, 152, 0, 0.2);
+    }
+
+    .raid-timer {
+      font-family: 'Inter', monospace;
+      font-size: 24px;
+      font-weight: 900;
+      color: #ff9800;
+      text-align: center;
+      margin: 8px 0;
+    }
+
+    /* Training ground */
+    .stat-upgrade-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+      font-size: 11px;
+    }
+
+    .stat-upgrade-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-upgrade-row .lbl {
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+    
+    .stat-upgrade-row .val {
+      font-weight: 800;
+      color: #fff;
+      margin-left: auto;
+      margin-right: 12px;
+    }
+
+    .upgrade-btn {
+      background: radial-gradient(circle, var(--gold) 0%, var(--gold-dark) 100%);
+      border: 1px solid #fff;
+      color: #000;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .upgrade-btn:hover {
+      box-shadow: 0 0 10px var(--gold-glow);
+    }
+
+    /* Equipment Forge */
+    .equip-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .equip-item-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+    }
+
+    .equip-icon {
+      width: 32px;
+      height: 32px;
+      background: #19192c;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .equip-item-box.rare { border-color: #2196f3; }
+    .equip-item-box.epic { border-color: #9c27b0; }
+    .equip-item-box.legend { border-color: #ff9800; }
+    .equip-item-box.mythic { border-color: #ff4545; }
+
+    .equip-name {
+      font-size: 10px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .equip-stat {
+      font-size: 9px;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .forge-btn {
+      background: #252538;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      font-size: 8px;
+      font-weight: 800;
+      padding: 2px;
+      border-radius: 3px;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .forge-btn:hover {
+      background: var(--gold);
+      color: #000;
+      border-color: #fff;
+    }
+
+    /* Potion shop */
+    .shop-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .shop-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.3);
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    .shop-item-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .shop-icon {
+      font-size: 20px;
+    }
+
+    .shop-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .shop-desc {
+      font-size: 9px;
+      color: var(--text-secondary);
+    }
+
+    .shop-buy-btn {
+      background: radial-gradient(circle, var(--gold) 0%, var(--gold-dark) 100%);
+      border: 1px solid #fff;
+      color: #000;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Bottom Achievements & Badges */
+    .bottom-section {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .bottom-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .achieve-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 250px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .achieve-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.02);
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 11px;
+    }
+
+    .achieve-item.completed {
+      border-color: var(--gold);
+      background: radial-gradient(circle, rgba(212,175,55,0.04) 0%, rgba(0,0,0,0.2) 100%);
+    }
+
+    .achieve-icon {
+      font-size: 18px;
+      filter: grayscale(1);
+    }
+    
+    .achieve-item.completed .achieve-icon {
+      filter: grayscale(0);
+    }
+
+    .achieve-details {
+      flex: 1;
+    }
+
+    .achieve-name {
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+    
+    .achieve-item.completed .achieve-name {
+      color: #fff;
+    }
+
+    .achieve-desc {
+      font-size: 9px;
+      color: var(--text-disabled);
+    }
+    
+    .achieve-item.completed .achieve-desc {
+      color: var(--text-secondary);
+    }
+
+    .achieve-reward {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--gold);
+    }
+
+    /* Class Selection Overlay */
+    .class-selection-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(3, 3, 7, 0.98);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .class-selection-title {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 10px var(--gold-glow);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    .class-selection-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .class-cards-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      max-width: 960px;
+      width: 100%;
+    }
+
+    .class-select-card {
+      background: radial-gradient(circle at 50% 50%, #15152b 0%, #070710 100%);
+      border: 2px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .class-select-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 10px 30px var(--gold-glow);
+    }
+
+    .class-select-icon-wrapper {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .class-select-icon-wrapper svg {
+      width: 54px;
+      height: 54px;
+    }
+
+    .class-select-name {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .class-select-passives {
+      font-size: 11px;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: rgba(212,175,55,0.1);
+      padding: 4px 10px;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+
+    .class-select-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Achievement Title Equip Modal style inside Profile */
+    .title-select-container {
+      margin-top: 6px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .title-dropdown {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+    }
+    
+    .title-dropdown:focus {
+      border-color: var(--gold);
+    }
+
+    /* Toast style updates */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 320px;
+    }
+
+    .toast {
+      background: linear-gradient(135deg, #1c1c30 0%, #080812 100%);
+      border: 1px solid var(--gold);
+      border-left: 4px solid var(--gold);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
+      opacity: 0;
+    }
+
+    .toast.active {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .toast-title {
+      font-family: var(--font-serif);
+      font-size: 11px;
+      color: var(--gold);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .toast-text {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* Modal dialog */
+    .boss-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(3, 3, 7, 0.95);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    
+    .boss-modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .boss-modal {
+      background: linear-gradient(135deg, #180606 0%, #030308 100%);
+      border: 2px solid var(--crimson);
+      box-shadow: 0 0 50px rgba(255, 69, 69, 0.3);
+      max-width: 480px;
+      width: 95%;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      transform: scale(0.8);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .boss-modal-backdrop.active .boss-modal {
+      transform: scale(1);
+    }
+
+    .boss-m-header {
+      font-family: var(--font-serif);
+      font-size: 11px;
+      color: var(--crimson-light);
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    
+    .boss-m-title {
+      font-family: var(--font-serif);
+      font-size: 26px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .boss-m-illustration {
+      width: 100px;
+      height: 100px;
+      margin: 12px auto;
+      border-radius: 50%;
+      border: 2px solid var(--crimson-light);
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .boss-m-illustration svg {
+      width: 70px;
+      height: 70px;
+    }
+
+    .boss-m-quote {
+      font-family: var(--font-serif);
+      color: var(--gold);
+      font-style: italic;
+      font-size: 14px;
+      margin: 12px 0;
+    }
+
+    .boss-m-desc {
+      background: rgba(0,0,0,0.4);
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-align: left;
+      line-height: 1.4;
+      margin-bottom: 16px;
+    }
+
+    .boss-m-btn {
+      background: radial-gradient(circle, var(--crimson) 0%, #500000 100%);
+      border: 1px solid var(--crimson-light);
+      color: #fff;
+      font-family: var(--font-serif);
+      padding: 8px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    /* ============================================
+       RESPONSIVE / MOBILE OPTIMIZATION
+       ============================================ */
+
+    /* ─── Tablet & smaller laptop (≤ 1100px) ─── */
+    @media (max-width: 1100px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .app-container {
+        padding: 16px;
+      }
+    }
+
+    /* ─── Tablet portrait (≤ 900px) ─── */
+    @media (max-width: 900px) {
+      header.app-header {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 14px 16px;
+        text-align: center;
+      }
+      .profile-box {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .top-stats-row {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .title-select-container {
+        justify-content: center;
+      }
+      .arena-grid {
+        gap: 14px;
+      }
+      .lecture-card {
+        grid-template-columns: 1fr 1.5fr;
+      }
+      .lecture-card .card-controls {
+        grid-column: 1 / -1;
+      }
+      .search-filter-wrapper {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .filters-checkboxes {
+        flex-wrap: wrap;
+      }
+      .bottom-section {
+        grid-template-columns: 1fr;
+      }
+      .class-cards-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        max-width: 420px;
+      }
+    }
+
+    /* ─── Mobile (≤ 768px) ─── */
+    @media (max-width: 768px) {
+      body {
+        font-size: 13px;
+      }
+      .app-container {
+        padding: 10px;
+      }
+
+      /* Header */
+      header.app-header {
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .avatar-wrapper {
+        width: 56px;
+        height: 56px;
+      }
+      .avatar-wrapper svg {
+        width: 38px;
+        height: 38px;
+      }
+      .character-info-text h2 {
+        font-size: 17px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .class-desc-tag {
+        font-size: 11px;
+      }
+      .top-stats-row {
+        width: 100%;
+        gap: 8px;
+        font-size: 11px;
+      }
+      .top-stat-item {
+        flex: 1;
+        min-width: 0;
+        padding: 6px 8px;
+      }
+      .top-stat-item .val {
+        font-size: 13px;
+      }
+
+      /* Battle Arena */
+      .battle-arena-card {
+        padding: 14px 12px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+      }
+      .arena-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        min-height: auto;
+      }
+      .arena-fighter.character.attacking {
+        transform: translateY(-24px) scale(1.05);
+      }
+      .arena-avatar {
+        width: 80px;
+        height: 80px;
+      }
+      .arena-avatar svg {
+        width: 60px;
+        height: 60px;
+      }
+      .fighter-bars {
+        width: 90%;
+        max-width: 280px;
+      }
+      .arena-center {
+        flex-direction: row;
+        gap: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .element-guide-circle {
+        width: 70px;
+        height: 70px;
+        font-size: 9px;
+      }
+      .element-dot.anat { top: 3px; left: 28px; }
+      .element-dot.phys { bottom: 3px; left: 6px; }
+      .element-dot.clin { bottom: 3px; right: 6px; }
+
+      /* Skills - larger tap targets on touch */
+      .skills-strip {
+        gap: 10px;
+      }
+      .skill-btn {
+        width: 58px;
+        height: 58px;
+      }
+      .skill-btn .skill-icon {
+        font-size: 20px;
+      }
+
+      /* Faint overlay */
+      .faint-title {
+        font-size: 24px;
+      }
+      .faint-desc {
+        font-size: 12px;
+        padding: 0 12px;
+      }
+      .faint-overlay > div[style*="flex"] {
+        flex-direction: column;
+        width: 80%;
+      }
+
+      /* Controls panel & tabs */
+      .controls-panel {
+        padding: 12px 14px;
+      }
+      .tab-btn {
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+      .btn-global-config {
+        width: 100%;
+        justify-content: center;
+        font-size: 11px;
+        padding: 8px 12px;
+      }
+
+      /* Lecture cards */
+      .lecture-card {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 14px;
+      }
+      .card-title {
+        font-size: 14px;
+      }
+      .card-checklist {
+        grid-template-columns: 1fr;
+      }
+      .check-label {
+        font-size: 12px;
+        padding: 8px 10px;
+        min-height: 36px;
+      }
+      .card-memo {
+        font-size: 11px;
+        min-height: 40px;
+        padding: 6px 10px;
+      }
+      .bonus-row {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+      .btn-small {
+        width: 24px;
+        height: 24px;
+        font-size: 13px;
+      }
+
+      /* Sidebar */
+      .sidebar-card {
+        padding: 14px;
+      }
+      .sidebar-card-title {
+        font-size: 13px;
+      }
+
+      /* Pomodoro */
+      .pomo-time {
+        font-size: 34px;
+      }
+      .pomo-btn {
+        padding: 10px 6px;
+        font-size: 11px;
+      }
+
+      /* Bottom section */
+      .bottom-section {
+        margin-top: 16px;
+        gap: 16px;
+      }
+      .bottom-card {
+        padding: 14px;
+      }
+
+      /* Class selection */
+      .class-selection-overlay {
+        padding: 16px;
+        align-items: flex-start;
+        overflow-y: auto;
+      }
+      .class-selection-title {
+        font-size: 24px;
+      }
+      .class-selection-subtitle {
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+      .class-cards-container {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        max-width: 100%;
+      }
+      .class-select-card {
+        padding: 18px;
+      }
+      .class-select-icon-wrapper {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 12px;
+      }
+      .class-select-icon-wrapper svg {
+        width: 44px;
+        height: 44px;
+      }
+      .class-select-name {
+        font-size: 17px;
+      }
+
+      /* Modals */
+      .boss-modal,
+      .config-modal {
+        padding: 18px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .boss-m-title {
+        font-size: 22px;
+      }
+      .config-m-header {
+        font-size: 16px;
+      }
+      .config-item-row {
+        grid-template-columns: 1fr 56px 36px;
+        font-size: 11px;
+      }
+
+      /* Toast */
+      .toast-container {
+        bottom: 12px;
+        right: 12px;
+        left: 12px;
+        max-width: none;
+      }
+    }
+
+    /* ─── Small mobile (≤ 480px) ─── */
+    @media (max-width: 480px) {
+      .app-container {
+        padding: 8px;
+      }
+      .character-info-text h2 {
+        font-size: 15px;
+      }
+      .active-title-tag {
+        font-size: 10px;
+      }
+      .top-stats-row {
+        gap: 6px;
+      }
+      .top-stat-item {
+        padding: 5px 6px;
+        font-size: 10px;
+      }
+      .top-stat-item .val {
+        font-size: 12px;
+      }
+      .battle-arena-card {
+        padding: 12px 10px;
+      }
+      .arena-avatar {
+        width: 72px;
+        height: 72px;
+      }
+      .arena-avatar svg {
+        width: 54px;
+        height: 54px;
+      }
+      .fighter-name {
+        font-size: 13px;
+      }
+      .skill-btn {
+        width: 52px;
+        height: 52px;
+      }
+      .pomo-time {
+        font-size: 30px;
+      }
+      .pomo-btns {
+        gap: 6px;
+      }
+      .lecture-card {
+        padding: 12px;
+        border-left-width: 3px;
+      }
+      .card-title {
+        font-size: 13px;
+      }
+      .check-label {
+        font-size: 11px;
+      }
+      .raid-timer {
+        font-size: 20px;
+      }
+      .faint-title {
+        font-size: 20px;
+      }
+      .class-selection-title {
+        font-size: 20px;
+      }
+      .class-select-card {
+        padding: 14px;
+      }
+      .boss-modal,
+      .config-modal {
+        padding: 14px;
+        border-radius: 10px;
+      }
+      .boss-m-title {
+        font-size: 18px;
+      }
+      .boss-m-illustration {
+        width: 80px;
+        height: 80px;
+      }
+      .boss-m-illustration svg {
+        width: 56px;
+        height: 56px;
+      }
+    }
+
+    /* ─── Very small mobile (≤ 360px) ─── */
+    @media (max-width: 360px) {
+      .top-stats-row {
+        flex-direction: column;
+        width: 100%;
+      }
+      .top-stat-item {
+        width: 100%;
+      }
+      .skill-btn {
+        width: 48px;
+        height: 48px;
+      }
+      .arena-center {
+        gap: 10px;
+      }
+    }
+
+    /* ─── Coarse pointer (touch devices) ─── */
+    @media (pointer: coarse) {
+      .skill-btn,
+      .pomo-btn,
+      .tab-btn,
+      .shop-buy-btn,
+      .upgrade-btn,
+      .forge-btn,
+      .btn-small,
+      .check-label,
+      .boss-m-btn,
+      .config-btn-action,
+      .config-btn-secondary,
+      .btn-global-config {
+        touch-action: manipulation;
+      }
+      /* Disable hover-only effects that linger on touch */
+      .lecture-card:hover {
+        transform: none;
+      }
+      .skill-btn:hover {
+        transform: none;
+      }
+      .class-select-card:hover {
+        transform: none;
+      }
+    }
+
+    /* ─── Landscape mobile (height-constrained) ─── */
+    @media (max-height: 480px) and (orientation: landscape) {
+      .class-selection-overlay {
+        padding: 12px;
+        align-items: flex-start;
+        overflow-y: auto;
+      }
+      .class-selection-title {
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+      .class-selection-subtitle {
+        font-size: 11px;
+        margin-bottom: 12px;
+      }
+      .class-cards-container {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .class-select-card {
+        padding: 12px;
+      }
+      .faint-title {
+        font-size: 18px;
+      }
+    }
+
+    /* Character & Monster Idle breathing animation */
+    @keyframes float-idle {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+      100% { transform: translateY(0px); }
+    }
+    
+    @keyframes monster-idle {
+      0% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-5px) scale(0.98) rotate(0.5deg); }
+      100% { transform: translateY(0px) scale(1); }
+    }
+    
+    .arena-fighter.character .arena-avatar svg {
+      animation: float-idle 3s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+    
+    .arena-fighter.monster .arena-avatar svg {
+      animation: monster-idle 4s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+    
+    /* Hurt impact animation for monster */
+    @keyframes monster-hurt {
+      0% { transform: translateX(0) scale(1); filter: brightness(1) drop-shadow(0 0 0 rgba(255,0,0,0)); }
+      20% { transform: translateX(12px) scale(0.95); filter: brightness(1.6) drop-shadow(0 0 8px #ff3366); }
+      40% { transform: translateX(-8px) scale(1.02); }
+      60% { transform: translateX(4px) scale(0.98); }
+      80% { transform: translateX(-1px) scale(1.01); }
+      100% { transform: translateX(0) scale(1); filter: brightness(1); }
+    }
+    
+    .arena-fighter.monster.hurt .arena-avatar svg {
+      animation: monster-hurt 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+    }
+    
+    /* Fainted Death & Ghost Ascension animations */
+    @keyframes character-fainted-rot {
+      0% { transform: rotate(0deg) scale(1); filter: grayscale(0) brightness(1); }
+      100% { transform: rotate(-90deg) translateY(12px); filter: grayscale(1) brightness(0.35); }
+    }
+    
+    .arena-fighter.character.fainted .arena-avatar {
+      animation: character-fainted-rot 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      border-color: var(--text-disabled) !important;
+      box-shadow: none !important;
+    }
+    
+    @keyframes ghost-ascend {
+      0% { transform: translateY(15px); opacity: 0; }
+      20% { opacity: 0.65; }
+      80% { opacity: 0.65; }
+      100% { transform: translateY(-75px); opacity: 0; }
+    }
+    
+    .arena-fighter.character .faint-ghost {
+      position: absolute;
+      top: 5px;
+      left: calc(50% - 25px);
+      width: 50px;
+      height: 50px;
+      fill: rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+      display: none;
+      z-index: 25;
+    }
+    
+    .arena-fighter.character.fainted .faint-ghost {
+      display: block;
+      animation: ghost-ascend 3.5s ease-in-out infinite;
+    }
+    
+    /* Screen wide Skill Impact overlays */
+    .skill-flash-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 1500;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+    }
+    
+    .skill-flash-overlay.q-active {
+      background: radial-gradient(circle, rgba(255,69,69,0.3) 0%, transparent 80%);
+      border: 4px solid var(--crimson-light);
+      animation: skillFlashQ 0.5s ease-out forwards;
+    }
+    
+    .skill-flash-overlay.w-active {
+      background: radial-gradient(circle, rgba(0,229,255,0.35) 0%, transparent 80%);
+      border: 4px solid var(--elem-physiology);
+      animation: skillFlashW 0.5s ease-out forwards;
+    }
+    
+    .skill-flash-overlay.e-active {
+      background: radial-gradient(circle, rgba(255,223,0,0.3) 0%, transparent 80%);
+      border: 4px solid var(--gold);
+      animation: skillFlashE 0.8s ease-out forwards;
+    }
+    
+    @keyframes skillFlashQ {
+      0% { opacity: 0; transform: scale(0.95); }
+      30% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.05); }
+    }
+    @keyframes skillFlashW {
+      0% { opacity: 0; filter: hue-rotate(0deg); }
+      20% { opacity: 1; }
+      40% { opacity: 0.6; }
+      60% { opacity: 1; }
+      100% { opacity: 0; filter: hue-rotate(30deg); }
+    }
+    @keyframes skillFlashE {
+      0% { opacity: 0; box-shadow: inset 0 0 100px rgba(212,175,55,0); }
+      20% { opacity: 1; box-shadow: inset 0 0 150px rgba(212,175,55,0.4); }
+      80% { opacity: 1; box-shadow: inset 0 0 150px rgba(212,175,55,0.4); }
+      100% { opacity: 0; box-shadow: inset 0 0 100px rgba(212,175,55,0); }
+    }
+    
+    /* Config Modal Overlay Styles */
+    .config-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(3, 3, 7, 0.9);
+      backdrop-filter: blur(8px);
+      z-index: 1900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    
+    .config-modal-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    .config-modal {
+      background: linear-gradient(135deg, #111122 0%, #06060c 100%);
+      border: 1px solid var(--gold);
+      box-shadow: 0 0 35px var(--gold-glow);
+      max-width: 500px;
+      width: 95%;
+      border-radius: 12px;
+      padding: 24px;
+      transform: scale(0.85);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .config-modal-backdrop.active .config-modal {
+      transform: scale(1);
+    }
+    
+    .config-m-header {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--gold);
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .config-m-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .config-m-close {
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 18px;
+    }
+    .config-m-close:hover { color: #fff; }
+    
+    .config-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    
+    .config-form-group label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+    
+    .config-form-group input, .config-form-group select {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+    }
+    
+    .config-form-group input:focus { border-color: var(--gold); }
+    
+    .config-list-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      padding-right: 4px;
+    }
+    
+    .config-item-row {
+      display: grid;
+      grid-template-columns: 1fr 60px 40px;
+      gap: 8px;
+      align-items: center;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 6px 10px;
+    }
+    
+    .config-item-row.head {
+      background: transparent;
+      border: none;
+      font-weight: 700;
+      font-size: 10px;
+      color: var(--text-secondary);
+      padding: 2px 10px;
+    }
+    
+    .config-item-row input {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+      padding: 4px 8px;
+      color: #fff;
+      font-size: 11px;
+    }
+    .config-item-row input:focus { border-color: var(--gold); }
+    
+    .config-btn-action {
+      background: var(--gold);
+      color: #000;
+      font-weight: 800;
+      border: 1px solid #fff;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .config-btn-action:hover { box-shadow: 0 0 10px var(--gold-glow); }
+    
+    .config-btn-secondary {
+      background: #252538;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .config-btn-secondary:hover { background: #353550; }
+    
+    .config-btn-danger {
+      background: #8b0000;
+      color: #fff;
+      border: 1px solid #ff4545;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .config-btn-danger:hover { background: #b30000; }
+    
+    /* Config Trigger Button in panel */
+    .btn-global-config {
+      background: radial-gradient(circle, #2a2a4c 0%, #121226 100%);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-global-config:hover {
+      box-shadow: 0 0 8px var(--gold-glow);
+      background: var(--gold);
+      color: #000;
+    }
+    
+    .lec-edit-gear-btn {
+      font-size: 10px;
+      color: var(--text-secondary);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+      padding: 1px 4px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+    .lec-edit-gear-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Character Class Selection Overlay -->
+  <div class="class-selection-overlay" id="class-select-overlay" style="display: none;">
+    <h2 class="class-selection-title">메디컬 RPG 학파 선택</h2>
+    <p class="class-selection-subtitle">자신의 학업 수련 스타일과 합치되는 학파를 선택하십시오.</p>
+    
+    <div class="class-cards-container">
+      <!-- Anatomist Card -->
+      <div class="class-select-card" data-class="Anatomist">
+        <div class="class-select-icon-wrapper">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#8b0000" stroke-width="2"/><path d="M50,25 C40,25 35,32 35,40 C35,55 50,75 50,75 C50,75 65,55 65,40 C65,32 60,25 50,25 Z" fill="#8b0000" opacity="0.6"/><circle cx="50" cy="40" r="8" fill="#d4af37"/><path d="M42,50 Q50,65 58,50" fill="none" stroke="#d4af37" stroke-width="2"/></svg>
+        </div>
+        <h3 class="class-select-name">해부학자 (Anatomist)</h3>
+        <div class="class-select-passives">치명타 확률 +15% 증가<br>치명타 배율 +50% 증가</div>
+        <p class="class-select-desc">인체의 물리적 구조와 약점을 정밀 연구합니다. 적의 허점을 노려 막강한 치명타(Critical)를 터뜨리는 것에 능합니다.</p>
+      </div>
+      
+      <!-- Physiologist Card -->
+      <div class="class-select-card" data-class="Physiologist">
+        <div class="class-select-icon-wrapper">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#0d7377" stroke-width="2"/><path d="M50,20 A15,15 0 0,0 35,35 C35,55 50,75 50,75 A15,15 0 0,0 65,35 A15,15 0 0,0 50,20 Z" fill="#0d7377" opacity="0.6"/><path d="M50,30 C45,45 55,45 50,65" fill="none" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="48" r="5" fill="#fff"/></svg>
+        </div>
+        <h3 class="class-select-name">생리학자 (Physiologist)</h3>
+        <div class="class-select-passives">기본 학습 XP 획득량 +20% 증가<br>최대 마나(MP) +20 증가</div>
+        <p class="class-select-desc">액체의 흐름과 순환계 기전을 탐구합니다. 마나의 보유량이 많고, 진도율 상승에 따른 학업 성취도(XP) 증가폭이 가장 큽니다.</p>
+      </div>
+      
+      <!-- Cardiologist Card -->
+      <div class="class-select-card" data-class="Cardiologist">
+        <div class="class-select-icon-wrapper">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#c9a227" stroke-width="2"/><polygon points="50,20 62,40 85,45 68,62 72,85 50,72 28,85 32,62 15,45 38,40" fill="#c9a227" opacity="0.6" stroke="#d4af37" stroke-width="1.5"/><circle cx="50" cy="50" r="12" fill="#fff" opacity="0.9"/></svg>
+        </div>
+        <h3 class="class-select-name">순환기내과의 (Cardiologist)</h3>
+        <div class="class-select-passives">기본 골드 획득량 +25% 증가<br>포모도로 완료 시 100% 무작위 재료 드롭</div>
+        <p class="class-select-desc">현장에서 생명을 수호하는 임상의입니다. 몬스터 사냥 효율을 극대화하여 골드를 다량 획득하고, 실천적 훈련(포모도로)에 극대화된 혜택을 봅니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Game Container -->
+  <div class="app-container shake-target" id="app-body-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="profile-box">
+        <div class="avatar-wrapper">
+          <div id="avatar-svg-container">
+            <!-- Selected Class SVG -->
+          </div>
+          <div class="level-bubble" id="profile-level">1</div>
+        </div>
+        <div class="character-info-text">
+          <h2>
+            <span id="char-name">의학 수련생</span>
+            <span class="active-title-tag" id="char-equipped-title">칭호 없음</span>
+          </h2>
+          <span class="class-desc-tag" id="char-class-name">해부학자</span>
+          
+          <div class="title-select-container">
+            <span style="font-size:10px; color:var(--text-secondary); font-weight:700;">칭호 장착:</span>
+            <select class="title-dropdown" id="title-equip-dropdown">
+              <option value="">칭호 장착 해제</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-middle">
+        <div class="xp-info-row">
+          <span class="xp-lbl">학습 수련 진척도 (XP)</span>
+          <span class="xp-vals"><span id="xp-current">0</span> / <span id="xp-next">500</span> XP</span>
+        </div>
+        <div class="bar-container">
+          <div class="bar-fill" id="xp-bar-fill"></div>
+        </div>
+      </div>
+      
+      <div class="top-stats-row">
+        <div class="top-stat-item">
+          <div>보유 골드</div>
+          <div class="val" id="gold-amount">0</div>
+        </div>
+        <div class="top-stat-item">
+          <div>가상 데미지 저항</div>
+          <div class="val" id="pressure-timer">안전함</div>
+        </div>
+        <div class="top-stat-item">
+          <div>최종 결전 D-Day</div>
+          <div class="val" style="color:var(--crimson-light);" id="dday-val">D-3</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Battle Arena Section -->
+    <section class="battle-arena-card" id="arena-combat-box">
+      <div class="raid-alert-banner" id="raid-active-banner">⚠️ 응급실 긴급 이송(ER Emergency Raid) 보스 출현! 제한시간 10분! ⚠️</div>
+      
+      <!-- Fainted screen overlay -->
+      <div class="faint-overlay" id="fainted-overlay">
+        <div class="faint-title">💀 시험 불안 기절 (Fainted)</div>
+        <div class="faint-desc">공부 방치로 인해 심한 불안감이 엄습하여 시험 불안 상태에 빠졌습니다!<br>치료(휴식)를 받거나 상점에서 카페인 포션을 복용하십시오. (XP 및 골드 획득 승수 -50% 적용)</div>
+        <div style="display:flex; gap:12px;">
+          <button class="boss-modal-btn" id="faint-rest-btn" style="background:#222; border-color:#888;">휴식하기 (3분)</button>
+          <button class="boss-modal-btn" id="faint-potion-btn" style="background:var(--gold); border-color:#fff; color:#000;">카페인 포션 복용 (200G)</button>
+        </div>
+      </div>
+
+      <div class="arena-grid">
+        <!-- Character (Left) -->
+        <div class="arena-fighter character" id="fighter-char">
+          <div class="arena-avatar" id="arena-char-svg">
+            <!-- Character SVG -->
+          </div>
+          <div class="fighter-name" id="arena-char-name">해부학자</div>
+          
+          <div class="fighter-bars">
+            <!-- HP Bar -->
+            <div>
+              <div class="fighter-bar-label"><span>HP (체력)</span><span id="char-hp-vals">100/100</span></div>
+              <div class="arena-bar-outer">
+                <div class="arena-bar-inner hp" id="char-hp-bar" style="width: 100%;"></div>
+              </div>
+            </div>
+            <!-- MP Bar -->
+            <div>
+              <div class="fighter-bar-label"><span>MP (마나)</span><span id="char-mp-vals">50/50</span></div>
+              <div class="arena-bar-outer">
+                <div class="arena-bar-inner mp" id="char-mp-bar" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Column: Compatibility & active skills -->
+        <div class="arena-center">
+          <div class="element-guide-circle">
+            <span style="z-index: 10;">상성 순환</span>
+            <div class="element-dot anat" title="해부 (참격)"></div>
+            <div class="element-dot phys" title="생리 (전기)"></div>
+            <div class="element-dot clin" title="임상 (화염)"></div>
+          </div>
+          
+          <div class="skills-strip">
+            <!-- Skill Q -->
+            <button class="skill-btn" id="skill-q-btn" title="[Q] 메디컬 메스 난무 (해부 속성, 물리 350% 데미지)">
+              <div class="key-tip">Q</div>
+              <span class="skill-icon">🗡️</span>
+              <span class="mp-cost">20M</span>
+              <div class="cooldown-overlay" id="skill-q-cooldown" style="display:none;">8</div>
+            </button>
+            
+            <!-- Skill W -->
+            <button class="skill-btn" id="skill-w-btn" title="[W] ECG 세동제거 (생리 속성, 전격 450% 데미지 + 6초간 치명타+20%)">
+              <div class="key-tip">W</div>
+              <span class="skill-icon">⚡</span>
+              <span class="mp-cost">35M</span>
+              <div class="cooldown-overlay" id="skill-w-cooldown" style="display:none;">15</div>
+            </button>
+            
+            <!-- Skill E -->
+            <button class="skill-btn" id="skill-e-btn" title="[E] 에피네프린 폭주 (임상 속성, 10초간 공격속도2배 + XP배율2배)">
+              <div class="key-tip">E</div>
+              <span class="skill-icon">💉</span>
+              <span class="mp-cost">50M</span>
+              <div class="cooldown-overlay" id="skill-e-cooldown" style="display:none;">40</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Monster (Right) -->
+        <div class="arena-fighter monster" id="fighter-monster">
+          <div class="arena-avatar" id="arena-monster-svg">
+            <!-- Monster SVG -->
+          </div>
+          <div class="fighter-name" id="arena-monster-name">죽상경화반</div>
+          <span class="element-badge anatomy" id="arena-monster-element">해부</span>
+          
+          <div class="fighter-bars">
+            <!-- HP Bar -->
+            <div>
+              <div class="fighter-bar-label"><span>Monster HP</span><span id="monster-hp-vals">150/150</span></div>
+              <div class="arena-bar-outer" style="height:12px;">
+                <div class="arena-bar-inner hp" id="monster-hp-bar" style="width: 100%; background-color:#ff3366;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid Layout -->
+    <main class="main-grid">
+      
+      <!-- Left Column: Lectures Progress -->
+      <section class="lectures-section">
+        
+        <div class="controls-panel">
+          <div class="tabs-wrapper" id="chapter-tabs">
+            <button class="tab-btn active" data-chapter="all">전체 던전</button>
+            <button class="tab-btn" data-chapter="1">1장: 해부의 성</button>
+            <button class="tab-btn" data-chapter="2">2장: 생리의 탑</button>
+            <button class="tab-btn" data-chapter="3">3장: 영상의 미궁</button>
+            <button class="tab-btn" data-chapter="4">4장: 검사의 광산</button>
+            <button class="tab-btn" data-chapter="5">5장: 임상의 쇼르·도</button>
+          </div>
+          
+          <div class="search-filter-wrapper">
+            <div class="search-box" style="flex:1;">
+              <input type="text" id="search-input" placeholder="강의주제, 교수, 날짜 등으로 실시간 필터링...">
+            </div>
+            <button class="btn-global-config" id="btn-open-global-config" title="글로벌 공부 체크리스트 세트 편집">⚙️ 글로벌 수련 목록 설정</button>
+            <div class="filters-checkboxes">
+              <label>
+                <input type="checkbox" id="filter-incomplete">
+                <span>미달성 퀘스트만</span>
+              </label>
+              <label>
+                <input type="checkbox" id="filter-memo">
+                <span>메모 작성됨만</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="lectures-list" id="lectures-container">
+          <!-- Dynamically populated -->
+        </div>
+
+      </section>
+
+      <!-- Right Column: Sidebar (Shop, Forge, Potion, Pomo) -->
+      <section class="sidebar-wrapper">
+        
+        <!-- Pomodoro Timer -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">
+            <span>⏱️ 포모도로 수련원</span>
+          </div>
+          <div class="pomo-time" id="timer-display">25:00</div>
+          <div class="pomo-btns">
+            <button class="pomo-btn play" id="timer-start-btn">수련 시작</button>
+            <button class="pomo-btn" id="timer-stop-btn">정지</button>
+            <button class="pomo-btn" id="timer-reset-btn">리셋</button>
+          </div>
+          <div class="pomo-modes">
+            <button class="pomo-mode-btn active" id="mode-focus25-btn">Focus 25m</button>
+            <button class="pomo-mode-btn" id="mode-focus50-btn">Focus 50m</button>
+          </div>
+          <div style="font-size:10px; color:var(--text-secondary); text-align:center; margin-top:8px;">
+            누적 수련 완료: <span id="pomo-sessions" style="color:var(--gold); font-weight:700;">0</span>회 (+<span id="pomo-xp">0</span> XP)
+          </div>
+        </div>
+
+        <!-- Real-time Emergency Raid Alert -->
+        <div class="sidebar-card raid-card" id="sidebar-raid-box">
+          <div class="sidebar-card-title" style="color:#ff9800;">
+            <span>🚨 응급실 응급 콜 (Raid)</span>
+            <span id="raid-status-pill" style="font-size:9px; background:#ff9800; color:#000; padding:1px 5px; border-radius:3px; font-weight:900;">대기 중</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-secondary); text-align:center;">
+            매 1시간마다 새로운 응급 콜 레이드가 활성화됩니다!
+          </div>
+          <div class="raid-timer" id="raid-timer-vals">00:00</div>
+          <div style="font-size:10px; color:#ff9800; font-weight:700; text-align:center;" id="raid-reward-label">
+            격파 보상: 전설의 하비 심장 정수 + 1,000 Gold
+          </div>
+        </div>
+
+        <!-- Training Ground: Stat Upgrades -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">
+            <span>💪 능력치 학업 훈련소</span>
+            <span style="font-size:9px; color:var(--text-secondary);" id="training-gold-val">보유: 0G</span>
+          </div>
+          <div id="stat-training-list">
+            <!-- Dynamic training rows -->
+          </div>
+        </div>
+
+        <!-- Equipment Forge -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">
+            <span>🛠️ 대장간 장비 진화 & 강화</span>
+          </div>
+          <div class="equip-grid" id="equip-forge-container">
+            <!-- Weapon, Armor, Ring, Book Slots -->
+          </div>
+          
+          <div style="margin-top:12px; padding:6px; background:rgba(0,0,0,0.3); border-radius:6px; border:1px solid rgba(255,255,255,0.03);">
+            <div style="font-size:10px; font-weight:700; color:var(--gold); margin-bottom:4px;">수집한 재료 인벤토리:</div>
+            <div style="display:flex; gap:8px; font-size:10px;" id="materials-inv-container">
+              <!-- Materials count -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Potion Shop -->
+        <div class="sidebar-card">
+          <div class="sidebar-card-title">
+            <span>🛒 카페인 물약 상점</span>
+          </div>
+          <div class="shop-box">
+            <div class="shop-item">
+              <div class="shop-item-info">
+                <div class="shop-icon">☕</div>
+                <div>
+                  <div class="shop-name">카페인 에스프레소 포션</div>
+                  <div class="shop-desc">HP/MP 100% 회복 & 기절 즉시 치료</div>
+                </div>
+              </div>
+              <button class="shop-buy-btn" id="buy-potion-btn" data-cost="200">200 G</button>
+            </div>
+            
+            <div style="font-size:9px; color:var(--text-secondary); text-align:center;">
+              소지 중인 물약: <span id="potions-count" style="color:var(--gold); font-weight:700;">0</span>개
+            </div>
+          </div>
+        </div>
+
+      </section>
+      
+    </main>
+
+    <!-- Bottom Section: Achievements -->
+    <section class="bottom-section">
+      <!-- Achievements List -->
+      <div class="bottom-card">
+        <div class="sidebar-card-title">
+          <span>🏆 업적의 전당 및 패시브 칭호</span>
+        </div>
+        <div class="achieve-list" id="achievements-container">
+          <!-- Dynamic achievements -->
+        </div>
+      </div>
+      
+      <!-- Elements Guild Info -->
+      <div class="bottom-card" style="display:flex; flex-direction:column; justify-content:center; gap:12px; text-align:center; padding:24px;">
+        <h3 style="font-family:var(--font-serif); color:var(--gold); font-size:18px;">순환기 RPG 상성 전법 안내</h3>
+        <p style="font-size:12px; color:var(--text-secondary); line-height:1.6;">
+          질환 몬스터의 속성을 노려 공격할 시 막대한 피해를 줄 수 있습니다.<br>
+          <span style="color:var(--elem-anatomy); font-weight:700;">해부(Anatomy)</span>는 구조적 병변에 강해 <span style="color:var(--elem-clinical); font-weight:700;">임상(Clinical)</span> 몹에 추가 피해를 주며,<br>
+          <span style="color:var(--elem-clinical); font-weight:700;">임상(Clinical)</span>은 약리와 기전에 대응하여 <span style="color:var(--elem-physiology); font-weight:700;">생리(Physiology)</span> 몹에 강하고,<br>
+          <span style="color:var(--elem-physiology); font-weight:700;">생리(Physiology)</span>는 전기 및 파동으로 <span style="color:var(--elem-anatomy); font-weight:700;">해부(Anatomy)</span> 몹에 추가 피해를 줍니다.
+        </p>
+        <div style="font-style:italic; font-size:11px; color:var(--crimson-light);">
+          "공부를 방치하면 시험 압박감(Exam Pressure)으로 캐릭터가 주기적인 가상 데미지를 입으니 진도를 정기적으로 박출하십시오!"
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Fullscreen Boss Battle Modal -->
+  <div class="boss-modal-backdrop" id="boss-modal-backdrop">
+    <div class="boss-modal">
+      <div class="boss-m-header">⚔️ DUNGEON BOSS DEFEATED ⚔️</div>
+      <div class="boss-m-title" id="boss-name">베살리우스</div>
+      <div class="boss-m-illustration" id="boss-svg-icon"></div>
+      <div class="boss-m-quote" id="boss-quote">"Galenum corrigendum est"</div>
+      <div class="boss-m-desc" id="boss-trivia">
+        1543년 『De humani corporis fabrica』를 출간, 갈레노스가 본 적 없던 인체를 직접 해부했다.
+      </div>
+      <div style="font-size:11px; color:var(--gold); font-weight:800; margin-bottom:12px;" id="boss-loot-rewards">
+        [전리품 획득]: +200 XP, +500 Gold, 해부학 강의록 조각 1개
+      </div>
+      <button class="boss-m-btn" id="boss-close-btn">계속 진행</button>
+    </div>
+  </div>
+
+  <!-- Skill Animation Flash Screens -->
+  <div class="skill-flash-overlay" id="skill-flash-screen"></div>
+
+  <!-- Global Checklist Editor Modal -->
+  <div class="config-modal-backdrop" id="global-config-backdrop">
+    <div class="config-modal">
+      <div class="config-m-header">
+        <div class="config-m-title">⚙️ 글로벌 공부 수련 목록 편집</div>
+        <div class="config-m-close" id="btn-close-global-config">×</div>
+      </div>
+      <div style="font-size:11px; color:var(--text-secondary); margin-bottom:14px; line-height:1.4;">
+        모든 던전/강의 카드에 기본 적용되는 공부 카테고리를 편집합니다.<br>
+        [전체 강의에 강제 적용] 선택 시 기존에 설정된 개별 카드 맞춤 체크리스트를 포함한 전체 항목이 템플릿과 강제 동기화됩니다.
+      </div>
+      
+      <div class="config-item-row head">
+        <div>공부 항목명</div>
+        <div>획득 XP</div>
+        <div>삭제</div>
+      </div>
+      
+      <div class="config-list-items" id="global-config-items-container">
+        <!-- Dynamic items -->
+      </div>
+      
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <button class="config-btn-secondary" style="flex:1;" id="btn-global-add-item">+ 수련 항목 추가</button>
+        <button class="config-btn-secondary" id="btn-global-reset-default" style="background:#500000; border-color:#8b0000;">기본값 초기화</button>
+      </div>
+      
+      <div style="display:flex; gap:10px; justify-content:flex-end; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
+        <button class="config-btn-secondary" id="btn-global-save-template">템플릿만 저장</button>
+        <button class="config-btn-action" id="btn-global-apply-all">전체 일괄 적용 & 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Individual Checklist Editor Modal -->
+  <div class="config-modal-backdrop" id="indiv-config-backdrop">
+    <div class="config-modal" style="border-color:#00e5ff; box-shadow: 0 0 35px rgba(0, 229, 255, 0.25);">
+      <div class="config-m-header" style="color:#00e5ff;">
+        <div class="config-m-title">⚙️ 강의별 맞춤 공부 항목 편집</div>
+        <div class="config-m-close" id="btn-close-indiv-config">×</div>
+      </div>
+      <div style="font-size:11px; color:var(--text-secondary); margin-bottom:14px; line-height:1.4;">
+        해당 강의 카드(<span id="indiv-config-lec-title" style="color:#fff; font-weight:700;">강의</span>)만의 독자적인 공부 세트를 제작합니다.<br>
+        글로벌 템플릿과 분리되어 완전히 독자적으로 작동합니다.
+      </div>
+      
+      <div class="config-item-row head">
+        <div>공부 항목명</div>
+        <div>획득 XP</div>
+        <div>삭제</div>
+      </div>
+      
+      <div class="config-list-items" id="indiv-config-items-container">
+        <!-- Dynamic items -->
+      </div>
+      
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <button class="config-btn-secondary" style="flex:1;" id="btn-indiv-add-item">+ 수련 항목 추가</button>
+        <button class="config-btn-secondary" id="btn-indiv-reset-template" style="color:#ff3366; border-color:#ff3366; background:rgba(255,51,102,0.05);">글로벌 기본값 복구</button>
+      </div>
+      
+      <div style="display:flex; gap:10px; justify-content:flex-end; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px;">
+        <button class="config-btn-action" id="btn-indiv-save" style="background:#00e5ff; border-color:#fff;">해당 강의에만 적용</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Audio Context Synthesizer Engine -->
+  <script>
+    const AudioEngine = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+      
+      playTimerComplete() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc1 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(523.25, now); // C5
+        osc1.frequency.exponentialRampToValueAtTime(1046.50, now + 0.3);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc1.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.35);
+      },
+      
+      playChime() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.6);
+        gain.connect(this.ctx.destination);
+        const freqs = [329.63, 392.00, 523.25, 659.25]; // E-G-C-E
+        freqs.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now + idx * 0.08);
+          osc.connect(gain);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.2);
+        });
+      },
+
+      playCrit() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.2);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      },
+
+      playHit() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(110, now + 0.05);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      },
+
+      playSkillQ() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        gain.connect(this.ctx.destination);
+        
+        for(let i=0; i<3; i++) {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(400 + i*150, now + i*0.06);
+          osc.frequency.exponentialRampToValueAtTime(80, now + i*0.06 + 0.1);
+          osc.connect(gain);
+          osc.start(now + i*0.06);
+          osc.stop(now + i*0.06 + 0.1);
+        }
+      },
+
+      playSkillW() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+        gain.connect(this.ctx.destination);
+        
+        const osc = this.ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(80, now);
+        osc.frequency.linearRampToValueAtTime(1000, now + 0.3);
+        
+        const mod = this.ctx.createOscillator();
+        const modGain = this.ctx.createGain();
+        mod.type = 'sine';
+        mod.frequency.value = 50; 
+        modGain.gain.value = 100;
+        
+        mod.connect(modGain);
+        modGain.connect(osc.frequency);
+        osc.connect(gain);
+        
+        mod.start(now);
+        osc.start(now);
+        mod.stop(now + 0.4);
+        osc.stop(now + 0.4);
+      },
+
+      playSkillE() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+        gain.connect(this.ctx.destination);
+        
+        for(let i=0; i<6; i++) {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(70, now + i*0.12);
+          osc.frequency.setValueAtTime(45, now + i*0.12 + 0.05);
+          osc.connect(gain);
+          osc.start(now + i*0.12);
+          osc.stop(now + i*0.12 + 0.1);
+        }
+      },
+
+      playFaint() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(40, now + 0.8);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.8);
+      },
+
+      playPotion() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.5);
+        gain.connect(this.ctx.destination);
+        
+        for (let i = 0; i < 5; i++) {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(200 + Math.random() * 400, now + i * 0.07);
+          osc.frequency.exponentialRampToValueAtTime(600 + Math.random() * 400, now + i * 0.07 + 0.1);
+          osc.connect(gain);
+          osc.start(now + i * 0.07);
+          osc.stop(now + i * 0.07 + 0.1);
+        }
+      },
+
+      playBossDefeat() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+        gain.connect(this.ctx.destination);
+        
+        // Victory fanfare chords (C4, E4, G4, C5, E5)
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25];
+        notes.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, now + idx * 0.12);
+          osc.connect(gain);
+          osc.start(now + idx * 0.12);
+          osc.stop(now + idx * 0.12 + 0.6);
+        });
+      }
+    };
+  </script>
+
+  <!-- Main Game Engine Script -->
+  <script>
+    // --- DB Definitions ---
+    const CHAPTERS = {
+      "1": { id: "1", name: "1장 「해부의 성」", bossId: "ch1", bossName: "베살리우스", color: "var(--ch1-color)" },
+      "2": { id: "2", name: "2장 「생리의 탑」", bossId: "ch2", bossName: "윌리엄 하비", color: "var(--ch2-color)" },
+      "3": { id: "3", name: "3장 「영상의 미궁」", bossId: "ch3", bossName: "르네 라에네크", color: "var(--ch3-color)" },
+      "4": { id: "4", name: "4장 「검사의 광산」", bossId: "ch4", bossName: "빌렘 아인트호벤", color: "var(--ch4-color)" },
+      "5": { id: "5", name: "5장 「임상의 쇼르·도」", bossId: "ch5", bossName: "현대 심장학의 거장", color: "var(--ch5-color)" }
+    };
+
+    const LECTURES_DATA = [
+      { id: "L01", date: "5/18", period: 2, title: "심장의 구조", prof: "김태영", chapterId: "1" },
+      { id: "L02", date: "5/18", period: 3, title: "심장의 구조", prof: "김태영", chapterId: "1" },
+      { id: "L03", date: "5/18", period: 4, title: "심장의 혈관", prof: "김태영", chapterId: "1" },
+      { id: "L04", date: "5/19", period: 1, title: "순환계통 조직I", prof: "김태영", chapterId: "1" },
+      { id: "L05", date: "5/19", period: 2, title: "순환계통 조직II", prof: "김태영", chapterId: "1" },
+      { id: "L06", date: "5/19", period: 3, title: "심박출량의 조절", prof: "송대규", chapterId: "2" },
+      { id: "L07", date: "5/21", period: 2, title: "심초음파 1 — 판막성 심질환", prof: "김인철", chapterId: "3" },
+      { id: "L08", date: "5/21", period: 3, title: "심초음파 2 — 판막성 심질환", prof: "김인철", chapterId: "3" },
+      { id: "L09", date: "5/21", period: 4, title: "심초음파 3 — 판막성 심질환", prof: "김인철", chapterId: "3" },
+      { id: "L21", date: "5/21", period: 7, title: "심장학 서론", prof: "장우성", chapterId: "5" },
+      { id: "L22", date: "5/21", period: 8, title: "심장수술 총론", prof: "김윤석", chapterId: "5" },
+      { id: "L10", date: "5/22", period: 1, title: "심혈관질환의 영상진단(1)", prof: "홍정희", chapterId: "3" },
+      { id: "L11", date: "5/22", period: 2, title: "심혈관질환의 영상진단(2)", prof: "홍정희", chapterId: "3" },
+      { id: "L12", date: "5/26", period: 1, title: "심초음파 1 — 개론", prof: "김인철", chapterId: "3" },
+      { id: "L13", date: "5/26", period: 2, title: "심초음파 2 — 개론", prof: "김인철", chapterId: "3" },
+      { id: "L14", date: "5/26", period: 3, title: "심장핵의학", prof: "원경숙", chapterId: "3" },
+      { id: "L15", date: "5/27", period: 1, title: "심혈관질환의 진단검사의학", prof: "강혜인", chapterId: "4" },
+      { id: "L16", date: "5/27", period: 2, title: "심전도 1", prof: "박형섭", chapterId: "4" },
+      { id: "L17", date: "5/27", period: 3, title: "심전도 2", prof: "박형섭", chapterId: "4" },
+      { id: "L18", date: "5/27", period: 7, title: "운동부하검사 / 관상동맥 조영술", prof: "조윤경", chapterId: "4" },
+      { id: "L19", date: "5/27", period: 8, title: "설문조사 및 질의 응답 수업 1", prof: "조윤경", chapterId: "4" },
+      { id: "L20", date: "5/28", period: 1, title: "심전도 3", prof: "정태완", chapterId: "4" },
+      { id: "L23", date: "5/28", period: 2, title: "빈맥 1", prof: "정태완", chapterId: "5" },
+      { id: "L24", date: "5/28", period: 3, title: "빈맥 2", prof: "정태완", chapterId: "5" },
+      { id: "L25", date: "5/28", period: 4, title: "서맥", prof: "황종민", chapterId: "5" },
+      { id: "L26", date: "5/28", period: 5, title: "심장진찰 1", prof: "황종민", chapterId: "5" },
+      { id: "L27", date: "5/28", period: 6, title: "심장진찰 2", prof: "황종민", chapterId: "5" }
+    ];
+
+    // High Quality Character & Monster SVGs
+    const SVGS = {
+      Anatomist: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <defs>
+          <radialGradient id="grad-red" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stop-color="#ff3b3b" />
+            <stop offset="100%" stop-color="#700000" />
+          </radialGradient>
+        </defs>
+        <!-- Aura Ring -->
+        <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(255, 69, 69, 0.4)" stroke-width="2" stroke-dasharray="6,4"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#d4af37" stroke-width="2"/>
+        <!-- Anatomist silhouette wizard-doctor -->
+        <path d="M50,15 C38,15 32,23 32,34 C32,55 50,78 50,78 C50,78 68,55 68,34 C68,23 62,15 50,15 Z" fill="url(#grad-red)"/>
+        <!-- Sterile Collar -->
+        <path d="M40,32 L50,42 L60,32" fill="none" stroke="#fff" stroke-width="2"/>
+        <!-- Surgical Headband -->
+        <rect x="42" y="20" width="16" height="4" fill="#fff" rx="1"/>
+        <circle cx="50" cy="22" r="3" fill="#d4af37"/>
+        <!-- Surgical Scalpels crossed in hands -->
+        <path d="M30,55 L42,42" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        <path d="M28,58 L32,54" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/>
+        <path d="M70,55 L58,42" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        <path d="M72,58 L68,54" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/>
+        <!-- Vital Center Core -->
+        <circle cx="50" cy="50" r="6" fill="#fff" stroke="#ffeb3b" stroke-width="1.5"/>
+      </svg>`,
+
+      Physiologist: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <defs>
+          <radialGradient id="grad-blue" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stop-color="#00e5ff" />
+            <stop offset="100%" stop-color="#053350" />
+          </radialGradient>
+        </defs>
+        <!-- Electric aura pulse ring -->
+        <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(0, 229, 255, 0.4)" stroke-width="2" stroke-dasharray="8,5"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#d4af37" stroke-width="2"/>
+        <!-- Robed Scholar body -->
+        <path d="M50,15 L25,48 L35,48 L28,80 L72,80 L65,48 L75,48 Z" fill="url(#grad-blue)" stroke="#00e5ff" stroke-width="1"/>
+        <!-- Electro-chemical circuit paths -->
+        <path d="M38,55 L50,42 L62,55" fill="none" stroke="#fff" stroke-width="2" opacity="0.8"/>
+        <!-- ECG spark in hands -->
+        <path d="M42,65 L48,65 L50,55 L53,75 L56,65 L62,65" fill="none" stroke="#ffeb3b" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="50" cy="26" r="8" fill="#fff" opacity="0.25"/>
+        <circle cx="50" cy="26" r="5" fill="#00e5ff"/>
+      </svg>`,
+
+      Cardiologist: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <defs>
+          <radialGradient id="grad-gold" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" stop-color="#fff" />
+            <stop offset="50%" stop-color="#ffdf00" />
+            <stop offset="100%" stop-color="#9c6d00" />
+          </radialGradient>
+        </defs>
+        <!-- Sacred Ring -->
+        <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(255, 223, 0, 0.4)" stroke-width="2" stroke-dasharray="4,4"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#d4af37" stroke-width="2"/>
+        <!-- Knight Doctor Body -->
+        <polygon points="50,15 64,38 87,42 70,60 74,83 50,70 26,83 30,60 13,42 36,38" fill="url(#grad-gold)" stroke="#fff" stroke-width="1.5"/>
+        <!-- Stethoscope Shield graphic -->
+        <circle cx="50" cy="48" r="13" fill="#0c0c16" stroke="#d4af37" stroke-width="2"/>
+        <path d="M43,45 C43,38 57,38 57,45 C57,54 50,58 50,60" fill="none" stroke="#ff3b3b" stroke-width="2" stroke-linecap="round"/>
+        <!-- Golden Cross -->
+        <path d="M50,22 L50,30 M46,26 L54,26" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      </svg>`,
+      
+      // Monster SVGs
+      Atheroma: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <rect x="8" y="38" width="84" height="24" fill="#30303b" rx="4" stroke="#ff4545" stroke-width="1.5"/>
+        <path d="M25,38 Q50,56 75,38 Z" fill="#ffeb3b" opacity="0.95"/>
+        <circle cx="50" cy="44" r="7" fill="#f44336" filter="drop-shadow(0 0 4px #ff0000)"/>
+        <circle cx="38" cy="46" r="4.5" fill="#ff9800"/>
+        <circle cx="62" cy="46" r="4.5" fill="#ff9800"/>
+        <text x="50" y="55" fill="#fff" font-size="7" font-weight="900" text-anchor="middle" font-family="monospace">ATHEROMA</text>
+      </svg>`,
+      VT: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <circle cx="50" cy="50" r="38" fill="#000" stroke="#00e5ff" stroke-width="2.5" stroke-dasharray="5,3"/>
+        <path d="M16,50 L34,50 L38,20 L44,80 L48,30 L52,50 L84,50" fill="none" stroke="#ff3366" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="44" cy="80" r="4" fill="#fff"/>
+        <circle cx="38" cy="20" r="4" fill="#fff"/>
+      </svg>`,
+      Stenosis: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#9c27b0" stroke-width="3" stroke-dasharray="10,5"/>
+        <circle cx="50" cy="50" r="28" fill="rgba(156,39,176,0.15)" stroke="#e040fb" stroke-width="2"/>
+        <path d="M50,12 L50,88 M12,50 L88,50" stroke="#9c27b0" stroke-width="2"/>
+        <circle cx="50" cy="50" r="9" fill="#ff1744" stroke="#ffeb3b" stroke-width="2.5"/>
+        <text x="50" y="32" fill="#e040fb" font-size="6" font-weight="900" text-anchor="middle" font-family="sans-serif">STENOSIS</text>
+      </svg>`,
+      Arrhythmia: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <rect x="12" y="12" width="76" height="76" rx="10" fill="none" stroke="#ffdf00" stroke-width="2.5" stroke-dasharray="4,4"/>
+        <path d="M18,50 L28,50 L32,32 L38,72 L44,22 L52,82 L58,45 L64,55 L82,50" fill="none" stroke="#00e5ff" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="44" cy="22" r="3" fill="#ffeb3b"/>
+        <circle cx="52" cy="82" r="3" fill="#ffeb3b"/>
+      </svg>`,
+      AMI: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <!-- Necrotic Heart -->
+        <path d="M50,18 C45,6 -8,16 16,62 C30,80 50,91 50,91 C50,91 70,80 84,62 C108,16 55,6 50,18 Z" fill="#212121" stroke="#ff1744" stroke-width="3" filter="drop-shadow(0 0 8px rgba(255,23,68,0.5))"/>
+        <!-- Electric Crack -->
+        <path d="M50,30 L38,52 L54,52 L42,76 L66,46 L48,46 Z" fill="#ff9100" stroke="#fff" stroke-width="1.5"/>
+        <text x="50" y="82" fill="#ff1744" font-size="6.5" font-weight="900" text-anchor="middle">NECROSIS</text>
+      </svg>`,
+      RaidBoss: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <defs>
+          <radialGradient id="raid-grad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ff3d00" />
+            <stop offset="70%" stop-color="#b20000" />
+            <stop offset="100%" stop-color="#000" />
+          </radialGradient>
+        </defs>
+        <circle cx="50" cy="50" r="42" fill="url(#raid-grad)" stroke="#ff3d00" stroke-width="3.5" filter="drop-shadow(0 0 15px #ff3d00)"/>
+        <!-- Menacing Eyes -->
+        <path d="M30,38 Q40,30 45,38" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+        <path d="M70,38 Q60,30 55,38" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="37" cy="38" r="2.5" fill="#ffeb3b"/>
+        <circle cx="63" cy="38" r="2.5" fill="#ffeb3b"/>
+        <!-- Heartbeat crack across face -->
+        <path d="M22,50 L40,50 L45,28 L53,72 L60,42 L78,50" fill="none" stroke="#ffeb3b" stroke-width="4" stroke-linejoin="round"/>
+      </svg>`,
+      
+      // Grave Tombstone for Fainted Character
+      Grave: `<svg viewBox="0 0 100 100" style="width:100%; height:100%;">
+        <!-- Tombstone -->
+        <path d="M25,80 L25,35 C25,20 75,20 75,35 L75,80 Z" fill="#424242" stroke="#212121" stroke-width="3"/>
+        <!-- R.I.P Text -->
+        <text x="50" y="44" fill="#9e9e9e" font-size="9" font-weight="900" text-anchor="middle" font-family="serif">R. I. P.</text>
+        <!-- Red Cross -->
+        <path d="M50,52 L50,70 M41,58 L59,58" stroke="#ff1744" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M15,80 L85,80" stroke="#212121" stroke-width="4" stroke-linecap="round"/>
+      </svg>`,
+      
+      // Floating Ghost Spirit
+      Ghost: `<svg viewBox="0 0 100 100">
+        <path d="M50,15 C30,15 25,32 25,50 C25,68 35,78 35,78 C35,78 40,70 50,70 C60,70 65,78 65,78 C65,78 75,68 75,50 C75,32 70,15 50,15 Z" fill="rgba(255, 255, 255, 0.4)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+        <circle cx="42" cy="38" r="3.5" fill="#fff"/>
+        <circle cx="58" cy="38" r="3.5" fill="#fff"/>
+        <path d="M45,52 Q50,47 55,52" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      </svg>`
+    };
+
+    const MONSTERS_DB = {
+      "m1_1": { name: "협착 미세혈관 플라크", hp: 120, maxHp: 120, elem: "Anatomy", exp: 40, gold: 30, svg: SVGS.Atheroma },
+      "m1_2": { name: "죽상경화반 전위체", hp: 150, maxHp: 150, elem: "Anatomy", exp: 50, gold: 40, svg: SVGS.Atheroma },
+      "m2_1": { name: "좌심실 이완기 비대핵", hp: 180, maxHp: 180, elem: "Physiology", exp: 60, gold: 50, svg: SVGS.VT },
+      "m3_1": { name: "석회화 승모판 분진", hp: 200, maxHp: 200, elem: "Clinical", exp: 80, gold: 60, svg: SVGS.Stenosis },
+      "m4_1": { name: "세동성 빈맥 파형", hp: 250, maxHp: 250, elem: "Physiology", exp: 100, gold: 85, svg: SVGS.Arrhythmia },
+      "m5_1": { name: "완전 차단성 전도핵", hp: 300, maxHp: 300, elem: "Clinical", exp: 120, gold: 100, svg: SVGS.Arrhythmia },
+      
+      "boss_ch1": { name: "베살리우스의 근대 해부상", hp: 450, maxHp: 450, elem: "Anatomy", exp: 200, gold: 200, isBoss: true, svg: SVGS.AMI },
+      "boss_ch2": { name: "윌리엄 하비의 순환 고렘", hp: 600, maxHp: 600, elem: "Physiology", exp: 250, gold: 300, isBoss: true, svg: SVGS.AMI },
+      "boss_ch3": { name: "라에네크의 역류 음파령", hp: 800, maxHp: 800, elem: "Clinical", exp: 300, gold: 400, isBoss: true, svg: SVGS.AMI },
+      "boss_ch4": { name: "아인트호벤의 세동 용", hp: 1100, maxHp: 1100, elem: "Physiology", exp: 350, gold: 500, isBoss: true, svg: SVGS.AMI },
+      "boss_ch5": { name: "현대 심장학의 거대 골릿", hp: 1500, maxHp: 1500, elem: "Clinical", exp: 500, gold: 600, isBoss: true, svg: SVGS.AMI },
+
+      "raid_boss": { name: "급성 심부전 중환자 Golem (RAID)", hp: 3500, maxHp: 3500, elem: "Clinical", exp: 800, gold: 1000, isRaid: true, svg: SVGS.RaidBoss }
+    };
+
+    const BOSSES_BY_CHAPTER = {
+      "1": "boss_ch1", "2": "boss_ch2", "3": "boss_ch3", "4": "boss_ch4", "5": "boss_ch5"
+    };
+
+    const BOSS_MODAL_TRIVIA = {
+      "boss_ch1": {
+        name: "베살리우스", quote: `"Galenum corrigendum est"`, meaning: "─ 갈레노스를 고쳐야 한다",
+        desc: "1543년 인체 구조에 관한 명저 『De humani corporis fabrica』를 출간하여 1500년간 정설이었던 갈레노스의 오류 200곳 이상을 바로잡은 혁명가.",
+        svg: SVGS.Anatomist
+      },
+      "boss_ch2": {
+        name: "윌리엄 하비", quote: `"Cor est principium vitae"`, meaning: "─ 심장은 생명의 시작이다",
+        desc: "1628년 『De motu cordis』를 출간하여 혈액이 인체를 왕복 순환하며 심장이 펌프 역할을 함을 수학적/생리적으로 증명한 근대 의학의 은인.",
+        svg: SVGS.Physiologist
+      },
+      "boss_ch3": {
+        name: "르네 라에네크", quote: `"Auscultation reveals what the eye cannot see"`, meaning: "─ 청진은 눈이 볼 수 없는 것을 드러낸다",
+        desc: "1816년 두꺼운 종이를 말아 청진을 시도한 것을 시작으로 목제 실린더 모양의 청진기를 최초 발명하여 간접 타진/청진법의 장을 연 선구자.",
+        svg: SVGS.Cardiologist
+      },
+      "boss_ch4": {
+        name: "빌렘 아인트호벤", quote: `"Each wave tells a story"`, meaning: "─ 각각의 파장은 이야기를 담고 있다",
+        desc: "1903년 양 현 진동 전류계(String Galvanometer)를 개량 개발하여 인체의 미세 전기를 ECG 파형(P-Q-R-S-T)으로 전수 명명한 1924년 노벨상 수상자.",
+        svg: SVGS.VT
+      },
+      "boss_ch5": {
+        name: "현대 심장학의 거장", quote: `"The heart yields to those who listen"`, meaning: "─ 심장은 경청하는 자에게 굴복한다",
+        desc: "1929년 포스만(Forssmann)이 자신의 요골 정맥에 카테터를 직접 꽂아 우심방에 도달하는 심도자술을 검증한 이래 현대 중재 시술(PCI)과 전기 생리를 비약적으로 완성한 임상의들의 계보.",
+        svg: SVGS.RaidBoss
+      }
+    };
+
+    const ACHIEVEMENT_TITLES = {
+      "FLURRY_MASTER": { name: "참격의 귀재", desc: "메스 난무 스킬 10회 시전", bonus: "ATK +10%" },
+      "POTION_ADDICT": { name: "카페인 중독자", desc: "카페인 포션 5회 구매", bonus: "LUCK +15%" },
+      "SHOCK_DOCTOR": { name: "전기 충격사", desc: "세동제거 스킬 15회 시전", bonus: "CRIT +8%" },
+      "BOSS_SLAYER": { name: "1장 정복자", desc: "해부의 성 보스 처치 성공", bonus: "ATK +12%" },
+      "STUDY_GOD": { name: "불면의 학자", desc: "누적 XP 3000 돌파", bonus: "INT +20%" },
+      "FORGE_GENIUS": { name: "신화 장비의 소유자", desc: "무기 등급 신화 달성", bonus: "ATK +20%, LUCK +10%" }
+    };
+
+    const ACHIEVEMENT_DB = [
+      { id: "FIRST_BLOOD", name: "최초의 일격", desc: "몬스터에게 최초로 데미지 주기", reward: "100 Gold" },
+      { id: "FLURRY_MASTER", name: "참격의 귀재", desc: "메스 난무(Q 스킬) 10회 시전", reward: "200 Gold + 칭호" },
+      { id: "SHOCK_DOCTOR", name: "전기 충격사", desc: "세동제거(W 스킬) 15회 시전", reward: "300 Gold + 칭호" },
+      { id: "POTION_ADDICT", name: "카페인 중독자", desc: "상점에서 카페인 포션 5회 구매", reward: "150 Gold + 칭호" },
+      { id: "BOSS_SLAYER", name: "1장 보스 처단", desc: "해부의 성 보스 베살리우스 처치", reward: "500 Gold + 칭호" },
+      { id: "STUDY_GOD", name: "불면의 학자", desc: "누적 3,000 XP 이상 획득", reward: "800 Gold + 칭호" },
+      { id: "FORGE_GENIUS", name: "신화 장비 보유", desc: "어떤 장비든 신화 등급까지 업그레이드", reward: "1,000 Gold + 칭호" }
+    ];
+
+    const EQUIPMENT_DB = {
+      weapon: { name: "메디컬 메스 Scalpel", slot: "weapon", level: 1, grade: "Common", baseStat: 15, statName: "ATK", icon: "🗡️" },
+      armor: { name: "멸균 의사 가운 Scrubs", slot: "armor", level: 1, grade: "Common", baseStat: 50, statName: "DEF", icon: "🛡️" },
+      ring: { name: "하비의 판막 반지 Ring", slot: "ring", level: 1, grade: "Common", baseStat: 5, statName: "CRIT", icon: "💍" },
+      book: { name: "해리슨 내과학 개론서", slot: "book", level: 1, grade: "Common", baseStat: 5, statName: "INT", icon: "📖" }
+    };
+
+    const LEVEL_THRESHOLDS = [
+      { level: 1, minXp: 0 },
+      { level: 2, minXp: 500 },
+      { level: 3, minXp: 1100 },
+      { level: 4, minXp: 1800 },
+      { level: 5, minXp: 2600 },
+      { level: 6, minXp: 3300 },
+      { level: 7, minXp: 4050 }
+    ];
+
+    // --- State Engine v2 ---
+    const GameState = {
+      state: {
+        version: 2,
+        classSelected: null,
+        level: 1,
+        xp: 0,
+        gold: 100,
+        hp: 100,
+        maxHp: 100,
+        mp: 50,
+        maxMp: 50,
+        
+        attributes: { atk: 10, int: 0, luck: 0, crit: 5, def: 10 },
+        equipment: {},
+        materials: { "anatomy_page": 0, "acoustic_ribbon": 0, "ecg_copper": 0, "epic_heart": 0 },
+        potions: 1,
+        lectures: {},
+        badges: [],
+        bossDefeated: { ch1: false, ch2: false, ch3: false, ch4: false, ch5: false },
+        achievements: [],
+        equippedTitle: "",
+        pomodoroSessions: 0,
+        
+        currentMonsterKey: "m1_1",
+        monsterHp: 120,
+        
+        lastActionTimestamp: Date.now(),
+        firstLaunchAt: Date.now(),
+        totalXp: 0,
+        cooldowns: { q: 0, w: 0, e: 0 },
+        
+        // Checklist Global Template
+        checklistTemplate: [
+          { id: "jokbo", label: "족보 공부", xp: 10 },
+          { id: "flashcard", label: "LM 플래시", xp: 15 },
+          { id: "quizFirst", label: "퀴즈 도전", xp: 40 },
+          { id: "review", label: "강의록 회독", xp: 60 },
+          { id: "quizRetry", label: "퀴즈 재도전", xp: 25 }
+        ]
+      },
+
+      history: { events: [] },
+
+      init() {
+        const localState = localStorage.getItem("circ-rpg-state-v2");
+        const localHistory = localStorage.getItem("circ-rpg-history-v1");
+        const legacyState = localStorage.getItem("circ-rpg-state-v1");
+
+        if (localState) {
+          try {
+            const parsed = JSON.parse(localState);
+            // Deep merge safety
+            this.state = Object.assign({}, this.state, parsed);
+            if (!this.state.checklistTemplate || this.state.checklistTemplate.length === 0) {
+              this.state.checklistTemplate = [
+                { id: "jokbo", label: "족보 공부", xp: 10 },
+                { id: "flashcard", label: "LM 플래시", xp: 15 },
+                { id: "quizFirst", label: "퀴즈 도전", xp: 40 },
+                { id: "review", label: "강의록 회독", xp: 60 },
+                { id: "quizRetry", label: "퀴즈 재도전", xp: 25 }
+              ];
+            }
+          } catch(e) {
+            this.resetState();
+          }
+        } else {
+          this.resetState();
+          
+          if (legacyState) {
+            try {
+              const legacy = JSON.parse(legacyState);
+              Object.keys(legacy.lectures).forEach(id => {
+                if (this.state.lectures[id]) {
+                  this.state.lectures[id] = Object.assign(this.state.lectures[id], legacy.lectures[id]);
+                }
+              });
+              this.state.pomodoroSessions = legacy.pomodoro ? (legacy.pomodoro.totalSessions || 0) : 0;
+              this.state.bossDefeated = legacy.bossDefeated || this.state.bossDefeated;
+              this.state.badges = legacy.badges || [];
+              this.state.xp = legacy.totalXp || 0;
+            } catch(err) {
+              console.log("Migration failed", err);
+            }
+          }
+        }
+
+        // Backward compatibility: Migrate checklists from legacy structures to Completed map
+        Object.keys(this.state.lectures).forEach(id => {
+          const lec = this.state.lectures[id];
+          if (!lec.completed) {
+            lec.completed = {};
+            if (lec.jokbo) lec.completed.jokbo = true;
+            if (lec.flashcard) lec.completed.flashcard = true;
+            if (lec.quizFirst) lec.completed.quizFirst = true;
+            if (lec.review) lec.completed.review = true;
+            if (lec.quizRetry) lec.completed.quizRetry = true;
+          }
+          if (lec.checklist === undefined) {
+            lec.checklist = null;
+          }
+        });
+
+        if (localHistory) {
+          try { this.history = JSON.parse(localHistory); } catch(e) { this.history = { events: [] }; }
+        }
+
+        if (!this.state.classSelected) {
+          document.getElementById("class-select-overlay").style.display = "flex";
+        } else {
+          this.bootGame();
+        }
+      },
+
+      resetState() {
+        this.state.classSelected = null;
+        this.state.level = 1;
+        this.state.xp = 0;
+        this.state.gold = 300;
+        this.state.hp = 100;
+        this.state.maxHp = 100;
+        this.state.mp = 50;
+        this.state.maxMp = 50;
+        this.state.attributes = { atk: 15, int: 0, luck: 0, crit: 5, def: 10 };
+        this.state.equipment = JSON.parse(JSON.stringify(EQUIPMENT_DB));
+        this.state.materials = { "anatomy_page": 0, "acoustic_ribbon": 0, "ecg_copper": 0, "epic_heart": 0 };
+        this.state.potions = 2;
+        this.state.lectures = {};
+        this.state.badges = [];
+        this.state.bossDefeated = { ch1: false, ch2: false, ch3: false, ch4: false, ch5: false };
+        this.state.achievements = [];
+        this.state.equippedTitle = "";
+        this.state.pomodoroSessions = 0;
+        this.state.currentMonsterKey = "m1_1";
+        this.state.monsterHp = 120;
+        this.state.lastActionTimestamp = Date.now();
+        this.state.cooldowns = { q: 0, w: 0, e: 0 };
+        this.state.checklistTemplate = [
+          { id: "jokbo", label: "족보 공부", xp: 10 },
+          { id: "flashcard", label: "LM 플래시", xp: 15 },
+          { id: "quizFirst", label: "퀴즈 도전", xp: 40 },
+          { id: "review", label: "강의록 회독", xp: 60 },
+          { id: "quizRetry", label: "퀴즈 재도전", xp: 25 }
+        ];
+        
+        LECTURES_DATA.forEach(lec => {
+          this.state.lectures[lec.id] = {
+            completed: {},
+            checklist: null,
+            bonusQuiz: 0,
+            bonusReview: 0,
+            memo: "",
+            lastActivityAt: null
+          };
+        });
+      },
+
+      bootGame() {
+        document.getElementById("class-select-overlay").style.display = "none";
+        
+        if (this.state.classSelected === "Anatomist") {
+          this.state.maxHp = 110;
+        } else if (this.state.classSelected === "Physiologist") {
+          this.state.maxMp = 70;
+        } else if (this.state.classSelected === "Cardiologist") {
+          this.state.maxHp = 120;
+        }
+        
+        this.state.hp = Math.min(this.state.hp, this.state.maxHp);
+        this.state.mp = Math.min(this.state.mp, this.state.maxMp);
+        
+        this.recalculateTotalXP();
+        this.save();
+        
+        setInterval(() => this.tickCombatAndPressure(), 1000);
+        
+        UI.init();
+      },
+
+      selectClass(className) {
+        this.state.classSelected = className;
+        this.bootGame();
+      },
+
+      save() {
+        localStorage.setItem("circ-rpg-state-v2", JSON.stringify(this.state));
+        localStorage.setItem("circ-rpg-history-v1", JSON.stringify(this.history));
+      },
+
+      logEvent(event) {
+        event.t = Date.now();
+        this.history.events.push(event);
+        if (this.history.events.length > 800) {
+          this.history.events = this.history.events.slice(-800);
+        }
+        this.save();
+      },
+
+      recalculateTotalXP() {
+        let total = 0;
+        Object.keys(this.state.lectures).forEach(id => {
+          const lec = this.state.lectures[id];
+          const activeChecklist = lec.checklist || this.state.checklistTemplate;
+          activeChecklist.forEach(item => {
+            if (lec.completed && lec.completed[item.id]) {
+              total += item.xp;
+            }
+          });
+          total += (lec.bonusQuiz || 0) * 20;
+          total += (lec.bonusReview || 0) * 30;
+        });
+        total += (this.state.pomodoroSessions || 0) * 5;
+        this.state.totalXp = total;
+        this.state.xp = total; 
+      },
+
+      getLevelInfo() {
+        let level = 1;
+        let minXp = 0;
+        let nextXp = 500;
+        for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) {
+          if (this.state.xp >= LEVEL_THRESHOLDS[i].minXp) {
+            level = LEVEL_THRESHOLDS[i].level;
+            minXp = LEVEL_THRESHOLDS[i].minXp;
+            nextXp = LEVEL_THRESHOLDS[i+1] ? LEVEL_THRESHOLDS[i+1].minXp : 999999;
+          }
+        }
+        const range = nextXp - minXp;
+        const progress = this.state.xp - minXp;
+        const pct = Math.min(100, Math.max(0, (progress / range) * 100));
+        return { level, nextXp, pct };
+      },
+
+      tickCombatAndPressure() {
+        let saveNeeded = false;
+        
+        ["q", "w", "e"].forEach(k => {
+          if (this.state.cooldowns[k] > 0) {
+            this.state.cooldowns[k]--;
+            saveNeeded = true;
+          }
+        });
+
+        if (Date.now() % 3000 < 1000 && this.state.mp < this.state.maxMp && this.state.hp > 0) {
+          this.state.mp = Math.min(this.state.maxMp, this.state.mp + 1);
+          saveNeeded = true;
+        }
+
+        const elapsed = Date.now() - this.state.lastActionTimestamp;
+        const limit = 300000; 
+
+        if (elapsed > limit && this.state.hp > 0) {
+          document.body.classList.add("under-pressure");
+          document.getElementById("pressure-timer").innerText = "불안 위험!";
+          
+          const damage = Math.ceil(this.state.maxHp * 0.02);
+          this.dealCharDamage(damage);
+          saveNeeded = true;
+        } else {
+          document.body.classList.remove("under-pressure");
+          if (this.state.hp > 0) {
+            const minLeft = Math.ceil((limit - elapsed) / 60000);
+            document.getElementById("pressure-timer").innerText = minLeft > 0 ? `${minLeft}분 후 위험` : "압박 없음";
+            
+            if (Date.now() % 3000 < 1000 && this.state.hp < this.state.maxHp) {
+              this.state.hp = Math.min(this.state.maxHp, this.state.hp + Math.ceil(this.state.maxHp * 0.01));
+              saveNeeded = true;
+            }
+          } else {
+            document.getElementById("pressure-timer").innerText = "기절함";
+          }
+        }
+
+        this.updateRaidTimer();
+
+        if (saveNeeded) {
+          this.save();
+          UI.renderStats();
+          UI.renderBattleArena();
+        }
+      },
+
+      dealCharDamage(amount) {
+        const netDef = this.getTotalStat("DEF");
+        const finalDamage = Math.max(1, amount - Math.floor(netDef * 0.1));
+        
+        this.state.hp = Math.max(0, this.state.hp - finalDamage);
+        
+        if (this.state.hp <= 0) {
+          AudioEngine.playFaint();
+          UI.showToast("💀 기절하였습니다", "학업 방치로 체력이 다해 기절했습니다! 골드로 카페인 물약을 드십시오.");
+          document.getElementById("fighter-char").classList.add("fainted");
+        }
+        UI.renderBattleArena();
+      },
+
+      reviveCharacter() {
+        this.state.hp = this.state.maxHp;
+        this.state.mp = this.state.maxMp;
+        this.state.lastActionTimestamp = Date.now();
+        document.getElementById("fighter-char").classList.remove("fainted");
+        this.save();
+        UI.render();
+      },
+
+      getTotalStat(name) {
+        let base = this.state.attributes[name.toLowerCase()] || 0;
+        
+        Object.keys(this.state.equipment).forEach(k => {
+          const item = this.state.equipment[k];
+          if (item && item.statName === name) {
+            base += item.baseStat + (item.level - 1) * 3;
+          }
+        });
+
+        if (this.state.equippedTitle) {
+          const title = ACHIEVEMENT_TITLES[this.state.equippedTitle];
+          if (title && title.bonus.includes(name)) {
+            const bonusPercentVal = parseInt(title.bonus.replace(/[^\d]/g, ''));
+            base += Math.floor(base * (bonusPercentVal / 100));
+          }
+        }
+
+        return base;
+      },
+
+      performStudyAttack(lecId, actField, isTick) {
+        this.state.lastActionTimestamp = Date.now();
+        
+        if (this.state.hp <= 0) {
+          UI.showToast("⚠️ 기절 상태 디버프", "기절하여 마력이 흐려졌습니다. XP 및 골드가 50% 감소합니다.");
+        }
+
+        if (isTick) {
+          this.state.mp = Math.min(this.state.maxMp, this.state.mp + 5);
+          
+          const baseAtk = this.getTotalStat("ATK");
+          const critRate = this.getTotalStat("CRIT");
+          const critBonus = this.state.classSelected === "Anatomist" ? 3.0 : 2.0;
+
+          let damage = baseAtk + Math.floor(Math.random() * baseAtk * 0.2);
+          let isCrit = Math.random() * 100 < critRate;
+          if (isCrit) {
+            damage = Math.floor(damage * critBonus);
+            AudioEngine.playCrit();
+          } else {
+            AudioEngine.playHit();
+          }
+
+          const monster = MONSTERS_DB[this.state.currentMonsterKey];
+          let charElement = "Clinical";
+          if (this.state.classSelected === "Anatomist") charElement = "Anatomy";
+          if (this.state.classSelected === "Physiologist") charElement = "Physiology";
+
+          const matchup = this.getElementMatchupMultiplier(charElement, monster.elem);
+          damage = Math.floor(damage * matchup.mult);
+
+          this.state.monsterHp = Math.max(0, this.state.monsterHp - damage);
+          
+          UI.triggerAttackAnimation();
+          UI.createDamageFloater(damage, isCrit, matchup.msg);
+
+          if (this.state.monsterHp <= 0) {
+            this.handleMonsterDefeat();
+          } else {
+            UI.triggerMonsterHurtAnimation();
+          }
+          UI.renderBattleArena();
+        }
+      },
+
+      getElementMatchupMultiplier(charElem, monElem) {
+        if (charElem === monElem) return { mult: 1.0, msg: "" };
+        if (
+          (charElem === "Anatomy" && monElem === "Clinical") ||
+          (charElem === "Clinical" && monElem === "Physiology") ||
+          (charElem === "Physiology" && monElem === "Anatomy")
+        ) {
+          return { mult: 1.5, msg: "weakness" };
+        }
+        return { mult: 0.7, msg: "resisted" };
+      },
+
+      castActiveSkill(skillKey) {
+        if (this.state.hp <= 0) return;
+        
+        let mpCost = 0, cooldown = 0, damageMult = 1, elem = "Clinical";
+        
+        if (skillKey === "q") { mpCost = 20; cooldown = 8; damageMult = 3.5; elem = "Anatomy"; }
+        if (skillKey === "w") { mpCost = 35; cooldown = 15; damageMult = 4.5; elem = "Physiology"; }
+        if (skillKey === "e") { mpCost = 50; cooldown = 40; damageMult = 1.0; elem = "Clinical"; } 
+
+        if (this.state.mp < mpCost) {
+          UI.showToast("❌ 마력 부족", "스킬을 소환하기 위한 MP가 부족합니다!");
+          return;
+        }
+        if (this.state.cooldowns[skillKey] > 0) return;
+
+        this.state.mp -= mpCost;
+        this.state.cooldowns[skillKey] = cooldown;
+        this.state.lastActionTimestamp = Date.now();
+
+        const baseAtk = this.getTotalStat("ATK");
+        const critRate = this.getTotalStat("CRIT");
+        
+        if (skillKey === "e") {
+          AudioEngine.playSkillE();
+          UI.showToast("💉 에피네프린 대방출!", "10초간 공격 주기 가속 및 XP 2배 폭주 버프 돌입!");
+          UI.triggerSkillOverlay("e");
+          document.getElementById("fighter-char").style.filter = "drop-shadow(0 0 15px var(--elem-clinical))";
+          setTimeout(() => {
+            document.getElementById("fighter-char").style.filter = "none";
+          }, 10000);
+        } else {
+          if (skillKey === "q") { AudioEngine.playSkillQ(); UI.triggerSkillOverlay("q"); }
+          if (skillKey === "w") { AudioEngine.playSkillW(); UI.triggerSkillOverlay("w"); }
+
+          let damage = Math.floor(baseAtk * damageMult);
+          let isCrit = Math.random() * 100 < critRate;
+          if (isCrit) {
+            damage = Math.floor(damage * 2.0);
+            AudioEngine.playCrit();
+          }
+
+          const monster = MONSTERS_DB[this.state.currentMonsterKey];
+          const matchup = this.getElementMatchupMultiplier(elem, monster.elem);
+          damage = Math.floor(damage * matchup.mult);
+
+          this.state.monsterHp = Math.max(0, this.state.monsterHp - damage);
+          UI.triggerAttackAnimation();
+          UI.createDamageFloater(damage, isCrit, matchup.msg + " SKILL CAST!");
+
+          if (this.state.monsterHp <= 0) {
+            this.handleMonsterDefeat();
+          } else {
+            UI.triggerMonsterHurtAnimation();
+          }
+        }
+
+        this.checkSkillAchievements(skillKey);
+        this.save();
+        UI.render();
+      },
+
+      checkSkillAchievements(key) {
+        if (key === "q") {
+          this.state.qCastCount = (this.state.qCastCount || 0) + 1;
+          if (this.state.qCastCount >= 10) this.unlockAchievement("FLURRY_MASTER");
+        }
+        if (key === "w") {
+          this.state.wCastCount = (this.state.wCastCount || 0) + 1;
+          if (this.state.wCastCount >= 15) this.unlockAchievement("SHOCK_DOCTOR");
+        }
+      },
+
+      handleMonsterDefeat() {
+        const monster = MONSTERS_DB[this.state.currentMonsterKey];
+        AudioEngine.playChime();
+        
+        let xpGained = monster.exp;
+        let goldGained = monster.gold + Math.floor(Math.random() * monster.gold * 0.25);
+        
+        if (this.state.classSelected === "Physiologist") xpGained = Math.floor(xpGained * 1.2);
+        if (this.state.classSelected === "Cardiologist") goldGained = Math.floor(goldGained * 1.25);
+        
+        const intBonus = this.getTotalStat("INT");
+        const luckBonus = this.getTotalStat("LUCK");
+
+        xpGained = Math.floor(xpGained * (1 + intBonus / 100));
+        goldGained = Math.floor(goldGained * (1 + luckBonus / 100));
+
+        if (this.state.hp <= 0) {
+          xpGained = Math.floor(xpGained * 0.5);
+          goldGained = Math.floor(goldGained * 0.5);
+        }
+
+        this.state.xp += xpGained;
+        this.state.gold += goldGained;
+
+        UI.showToast("⚔️ 몬스터 사냥 완료!", `${monster.name} 처치! +${xpGained} XP, +${goldGained} Gold 획득.`);
+
+        const rand = Math.random() * 100;
+        const dropThreshold = 40 + (luckBonus * 0.5); 
+
+        let materialDropped = null;
+        if (rand < dropThreshold) {
+          if (monster.isRaid) {
+            materialDropped = "epic_heart";
+            this.state.materials.epic_heart++;
+          } else if (this.state.currentMonsterKey.startsWith("m1_")) {
+            materialDropped = "anatomy_page";
+            this.state.materials.anatomy_page++;
+          } else if (this.state.currentMonsterKey.startsWith("m3_")) {
+            materialDropped = "acoustic_ribbon";
+            this.state.materials.acoustic_ribbon++;
+          } else if (this.state.currentMonsterKey.startsWith("m4_")) {
+            materialDropped = "ecg_copper";
+            this.state.materials.ecg_copper++;
+          }
+        }
+
+        if (materialDropped) {
+          UI.showToast("📦 희귀 전리품 획득!", `재료 아이템 [${materialDropped}] 1개 획득!`);
+        }
+
+        if (monster.isBoss) {
+          const chId = this.state.currentMonsterKey.replace("boss_ch", "");
+          this.state.bossDefeated[`ch${chId}`] = true;
+          this.unlockAchievement("BOSS_SLAYER");
+          
+          setTimeout(() => {
+            UI.showBossDefeatedModal(this.state.currentMonsterKey);
+          }, 300);
+        }
+
+        this.unlockAchievement("FIRST_BLOOD");
+        if (this.state.xp >= 3000) this.unlockAchievement("STUDY_GOD");
+
+        this.checkLevelUp();
+        this.spawnNextMonster();
+      },
+
+      checkLevelUp() {
+        const lvlInfo = this.getLevelInfo();
+        if (lvlInfo.level > this.state.level) {
+          this.state.level = lvlInfo.level;
+          this.state.hp = this.state.maxHp;
+          this.state.mp = this.state.maxMp;
+          
+          AudioEngine.playChime();
+          UI.showToast("👑 LEVEL UP!", `레벨 ${this.state.level} 달성! 능력치가 대폭 증가하고 체력/마나가 완전 충전됩니다!`);
+          UI.triggerLevelUpAnimation();
+        }
+      },
+
+      spawnNextMonster() {
+        const keys = Object.keys(MONSTERS_DB).filter(k => !MONSTERS_DB[k].isBoss && !MONSTERS_DB[k].isRaid);
+        const randKey = keys[Math.floor(Math.random() * keys.length)];
+        
+        this.state.currentMonsterKey = randKey;
+        const newMon = MONSTERS_DB[randKey];
+        this.state.monsterHp = newMon.maxHp;
+        
+        this.save();
+      },
+
+      triggerBossCombat(bossKey) {
+        if (!MONSTERS_DB[bossKey]) return;
+        this.state.currentMonsterKey = bossKey;
+        this.state.monsterHp = MONSTERS_DB[bossKey].maxHp;
+        this.save();
+        UI.renderBattleArena();
+      },
+
+      unlockAchievement(id) {
+        if (this.state.achievements.includes(id)) return;
+        this.state.achievements.push(id);
+        
+        const dbItem = ACHIEVEMENT_DB.find(a => a.id === id);
+        if (dbItem) {
+          this.state.gold += parseInt(dbItem.reward);
+          UI.showToast("🏆 업적 달성!", `[${dbItem.name}] 해금! ${dbItem.reward} 보상 획득.`);
+        }
+        
+        UI.populateTitles();
+        this.save();
+      },
+
+      // --- Custom Checklist Editors ---
+      saveGlobalChecklist(newList, andApplyAll = false) {
+        this.state.checklistTemplate = newList;
+        if (andApplyAll) {
+          Object.keys(this.state.lectures).forEach(lecId => {
+            this.state.lectures[lecId].checklist = null; 
+            // Re-merge completed states
+            const oldCompleted = this.state.lectures[lecId].completed || {};
+            this.state.lectures[lecId].completed = {};
+            newList.forEach(item => {
+              if (oldCompleted[item.id] !== undefined) {
+                this.state.lectures[lecId].completed[item.id] = oldCompleted[item.id];
+              } else {
+                this.state.lectures[lecId].completed[item.id] = false;
+              }
+            });
+          });
+          UI.showToast("⚙️ 글로벌 설정 일괄 적용", "모든 강의의 공부 수련 항목이 일괄 적용되었습니다!");
+        } else {
+          UI.showToast("⚙️ 글로벌 템플릿 저장", "글로벌 공부 수련 기본 템플릿이 저장되었습니다.");
+        }
+        this.recalculateTotalXP();
+        this.save();
+        UI.render();
+      },
+
+      saveIndividualChecklist(lecId, newList) {
+        if (!this.state.lectures[lecId]) return;
+        
+        // Preserve completed checks if IDs match
+        const oldCompleted = this.state.lectures[lecId].completed || {};
+        this.state.lectures[lecId].completed = {};
+        
+        newList.forEach(item => {
+          if (oldCompleted[item.id] !== undefined) {
+            this.state.lectures[lecId].completed[item.id] = oldCompleted[item.id];
+          } else {
+            this.state.lectures[lecId].completed[item.id] = false;
+          }
+        });
+        
+        this.state.lectures[lecId].checklist = newList;
+        this.recalculateTotalXP();
+        this.save();
+        UI.render();
+        UI.showToast("⚙️ 개별 설정 적용", "해당 강의 카드만의 고유 공부 수련 세트가 구축되었습니다!");
+      },
+
+      resetIndividualChecklist(lecId) {
+        if (!this.state.lectures[lecId]) return;
+        this.state.lectures[lecId].checklist = null;
+        this.state.lectures[lecId].completed = {};
+        this.recalculateTotalXP();
+        this.save();
+        UI.render();
+        UI.showToast("⚙️ 글로벌 동기화", "해당 강의 카드의 공부 항목이 글로벌 기본 템플릿으로 연동되었습니다.");
+      },
+
+      // --- Shop & Forge Actions ---
+      upgradeAttribute(attr) {
+        const cost = 100 + (this.state.attributes[attr] || 0) * 12;
+        if (this.state.gold < cost) {
+          UI.showToast("❌ 골드 부족", "능력치를 훈련시키기 위한 골드가 부족합니다!");
+          return;
+        }
+
+        this.state.gold -= cost;
+        this.state.attributes[attr]++;
+        this.save();
+        UI.render();
+        UI.showToast("💪 스탯 업그레이드 완료!", `${attr.toUpperCase()} 능력치가 단련되었습니다.`);
+      },
+
+      buyPotion() {
+        if (this.state.gold < 200) {
+          UI.showToast("❌ 골드 부족", "포션을 구매하기 위한 골드가 부족합니다!");
+          return;
+        }
+        this.state.gold -= 200;
+        this.state.potions++;
+        
+        this.state.potionsCount = (this.state.potionsCount || 0) + 1;
+        if (this.state.potionsCount >= 5) this.unlockAchievement("POTION_ADDICT");
+
+        this.save();
+        UI.render();
+        UI.showToast("☕ 에스프레소 포션 구매", "상점에서 포션을 1개 구매했습니다.");
+      },
+
+      usePotion() {
+        if (this.state.potions <= 0) {
+          UI.showToast("❌ 포션 없음", "보유하고 있는 포션이 없습니다!");
+          return;
+        }
+        this.state.potions--;
+        AudioEngine.playPotion();
+        this.reviveCharacter();
+      },
+
+      forgeEquipment(slot) {
+        const item = this.state.equipment[slot];
+        if (!item) return;
+
+        const goldCost = 50 + item.level * 20;
+        let matNeeded = "anatomy_page";
+        if (slot === "ring") matNeeded = "acoustic_ribbon";
+        if (slot === "book") matNeeded = "ecg_copper";
+        
+        const matQtyNeeded = Math.floor(item.level / 2) + 1;
+
+        if (this.state.gold < goldCost) {
+          UI.showToast("❌ 골드 부족", "장비를 담금질하기 위한 골드가 부족합니다!");
+          return;
+        }
+
+        if (slot !== "armor" && (this.state.materials[matNeeded] || 0) < matQtyNeeded) {
+          UI.showToast("❌ 재료 부족", "장비를 강화하기 위한 전리품 재료가 부족합니다!");
+          return;
+        }
+
+        this.state.gold -= goldCost;
+        if (slot !== "armor") {
+          this.state.materials[matNeeded] -= matQtyNeeded;
+        }
+
+        item.level++;
+        
+        if (item.level === 4) item.grade = "Rare";
+        if (item.level === 7) item.grade = "Epic";
+        if (item.level === 10) {
+          item.grade = "Legendary";
+          UI.showToast("🔥 장비 초월 진화!", `${item.name}의 봉인이 해제되며 전설 등급에 들어섰습니다!`);
+        }
+        if (item.level === 13) {
+          item.grade = "Mythic";
+          this.unlockAchievement("FORGE_GENIUS");
+        }
+
+        this.save();
+        UI.render();
+        UI.showToast("🛠️ 장비 강화 성공!", `${item.name} +${item.level} 강화에 성공하였습니다.`);
+      },
+
+      changeBonus(lecId, act, delta) {
+        if (!this.state.lectures[lecId]) return;
+        const current = this.state.lectures[lecId][act] || 0;
+        this.state.lectures[lecId][act] = Math.max(0, current + delta);
+        this.recalculateTotalXP();
+        this.save();
+        UI.render();
+      },
+
+      setMemo(lecId, txt) {
+        if (!this.state.lectures[lecId]) return;
+        this.state.lectures[lecId].memo = txt;
+        this.save();
+      },
+
+      updateRaidTimer() {
+        const now = new Date();
+        const nextHour = new Date(now);
+        nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+        
+        const diff = nextHour - now;
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        document.getElementById("raid-timer-vals").innerText = timeStr;
+
+        const minutesPassed = now.getMinutes();
+        const isRaidActive = minutesPassed < 10;
+        
+        const banner = document.getElementById("raid-active-banner");
+        const box = document.getElementById("sidebar-raid-box");
+        const pill = document.getElementById("raid-status-pill");
+
+        if (isRaidActive) {
+          banner.style.display = "block";
+          pill.innerText = "진행 중!";
+          pill.style.background = "#ff3366";
+          pill.style.color = "#fff";
+          box.style.borderColor = "#ff3366";
+          
+          if (this.state.currentMonsterKey !== "raid_boss") {
+            this.state.currentMonsterKey = "raid_boss";
+            this.state.monsterHp = MONSTERS_DB.raid_boss.maxHp;
+            this.save();
+            UI.renderBattleArena();
+            UI.showToast("🚨 EMERGENCY RAID!", "응급실 대형 질병 골렘 레이드가 시작되었습니다!");
+          }
+        } else {
+          banner.style.display = "none";
+          pill.innerText = "대기 중";
+          pill.style.background = "#ff9800";
+          pill.style.color = "#000";
+          box.style.borderColor = "#ff9800";
+          
+          if (this.state.currentMonsterKey === "raid_boss") {
+            this.spawnNextMonster();
+            UI.renderBattleArena();
+          }
+        }
+      }
+    };
+
+    // --- Dynamic UI Renderer ---
+    const UI = {
+      currentChapterFilter: "all",
+      searchQuery: "",
+      filterIncomplete: false,
+      filterMemo: false,
+      
+      activeEditLecId: null,
+
+      init() {
+        document.getElementById("chapter-tabs").addEventListener("click", (e) => {
+          const btn = e.target.closest(".tab-btn");
+          if (!btn) return;
+          document.querySelectorAll("#chapter-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          this.currentChapterFilter = btn.dataset.chapter;
+          this.renderLectures();
+        });
+
+        document.getElementById("search-input").addEventListener("input", (e) => {
+          this.searchQuery = e.target.value.toLowerCase().trim();
+          this.renderLectures();
+        });
+        document.getElementById("filter-incomplete").addEventListener("change", (e) => {
+          this.filterIncomplete = e.target.checked;
+          this.renderLectures();
+        });
+        document.getElementById("filter-memo").addEventListener("change", (e) => {
+          this.filterMemo = e.target.checked;
+          this.renderLectures();
+        });
+
+        document.getElementById("faint-potion-btn").addEventListener("click", () => {
+          if (GameState.state.potions > 0) {
+            GameState.usePotion();
+          } else {
+            GameState.buyPotion();
+            if (GameState.state.potions > 0) GameState.usePotion();
+          }
+        });
+
+        document.getElementById("faint-rest-btn").addEventListener("click", () => {
+          UI.showToast("🧘 명상 회복 중...", "불안감을 날리기 위해 3분간 깊은 명상에 들어갑니다.");
+          document.getElementById("faint-rest-btn").innerText = "회복 중 (180s)";
+          document.getElementById("faint-rest-btn").disabled = true;
+          
+          let timeLeft = 180;
+          const restTimer = setInterval(() => {
+            timeLeft--;
+            document.getElementById("faint-rest-btn").innerText = `회복 중 (${timeLeft}s)`;
+            if (timeLeft <= 0) {
+              clearInterval(restTimer);
+              GameState.reviveCharacter();
+              document.getElementById("faint-rest-btn").innerText = "휴식하기 (3분)";
+              document.getElementById("faint-rest-btn").disabled = false;
+            }
+          }, 1000);
+        });
+
+        document.getElementById("buy-potion-btn").addEventListener("click", () => GameState.buyPotion());
+
+        document.getElementById("skill-q-btn").addEventListener("click", () => GameState.castActiveSkill("q"));
+        document.getElementById("skill-w-btn").addEventListener("click", () => GameState.castActiveSkill("w"));
+        document.getElementById("skill-e-btn").addEventListener("click", () => GameState.castActiveSkill("e"));
+
+        window.addEventListener("keydown", (e) => {
+          const activeEl = document.activeElement;
+          if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
+            return; 
+          }
+          if (e.key === "q" || e.key === "Q" || e.key === "ㅂ") GameState.castActiveSkill("q");
+          if (e.key === "w" || e.key === "W" || e.key === "ㅈ") GameState.castActiveSkill("w");
+          if (e.key === "e" || e.key === "E" || e.key === "ㄷ") GameState.castActiveSkill("e");
+        });
+
+        document.getElementById("boss-close-btn").addEventListener("click", () => {
+          document.getElementById("boss-modal-backdrop").classList.remove("active");
+        });
+
+        document.getElementById("title-equip-dropdown").addEventListener("change", (e) => {
+          GameState.state.equippedTitle = e.target.value;
+          GameState.save();
+          this.render();
+        });
+
+        // Config Modal event bindings
+        this.bindConfigModalEvents();
+
+        this.populateTitles();
+        this.render();
+      },
+
+      bindConfigModalEvents() {
+        const globalBackdrop = document.getElementById("global-config-backdrop");
+        const indivBackdrop = document.getElementById("indiv-config-backdrop");
+
+        // Open Global Config
+        document.getElementById("btn-open-global-config").addEventListener("click", () => {
+          this.renderGlobalConfigItems();
+          globalBackdrop.classList.add("active");
+        });
+        // Close Global Config
+        document.getElementById("btn-close-global-config").addEventListener("click", () => globalBackdrop.classList.remove("active"));
+
+        // Global Add Item
+        document.getElementById("btn-global-add-item").addEventListener("click", () => {
+          const container = document.getElementById("global-config-items-container");
+          const row = document.createElement("div");
+          row.className = "config-item-row";
+          const newId = "custom_" + Date.now();
+          row.innerHTML = `
+            <input type="text" value="새 수련 항목" class="item-label">
+            <input type="number" value="20" class="item-xp">
+            <button class="config-btn-danger btn-delete-row" data-id="${newId}">삭제</button>
+          `;
+          row.querySelector(".btn-delete-row").addEventListener("click", () => row.remove());
+          container.appendChild(row);
+        });
+
+        // Global Reset Default
+        document.getElementById("btn-global-reset-default").addEventListener("click", () => {
+          GameState.state.checklistTemplate = [
+            { id: "jokbo", label: "족보 공부", xp: 10 },
+            { id: "flashcard", label: "LM 플래시", xp: 15 },
+            { id: "quizFirst", label: "퀴즈 도전", xp: 40 },
+            { id: "review", label: "강의록 회독", xp: 60 },
+            { id: "quizRetry", label: "퀴즈 재도전", xp: 25 }
+          ];
+          this.renderGlobalConfigItems();
+          this.showToast("⚙️ 초기화 완료", "글로벌 공부 카테고리가 기본값으로 재설정되었습니다.");
+        });
+
+        // Global Save Template
+        document.getElementById("btn-global-save-template").addEventListener("click", () => {
+          const list = this.getGlobalConfigInputs();
+          GameState.saveGlobalChecklist(list, false);
+          globalBackdrop.classList.remove("active");
+        });
+
+        // Global Apply All
+        document.getElementById("btn-global-apply-all").addEventListener("click", () => {
+          const list = this.getGlobalConfigInputs();
+          GameState.saveGlobalChecklist(list, true);
+          globalBackdrop.classList.remove("active");
+        });
+
+        // Close Indiv Config
+        document.getElementById("btn-close-indiv-config").addEventListener("click", () => indivBackdrop.classList.remove("active"));
+
+        // Indiv Add Item
+        document.getElementById("btn-indiv-add-item").addEventListener("click", () => {
+          const container = document.getElementById("indiv-config-items-container");
+          const row = document.createElement("div");
+          row.className = "config-item-row";
+          const newId = "custom_" + Date.now();
+          row.innerHTML = `
+            <input type="text" value="새 맞춤 공부" class="item-label">
+            <input type="number" value="30" class="item-xp">
+            <button class="config-btn-danger btn-delete-row" data-id="${newId}">삭제</button>
+          `;
+          row.querySelector(".btn-delete-row").addEventListener("click", () => row.remove());
+          container.appendChild(row);
+        });
+
+        // Indiv Reset Template (Reset to Global Default)
+        document.getElementById("btn-indiv-reset-template").addEventListener("click", () => {
+          if (this.activeEditLecId) {
+            GameState.resetIndividualChecklist(this.activeEditLecId);
+            indivBackdrop.classList.remove("active");
+          }
+        });
+
+        // Indiv Save Apply
+        document.getElementById("btn-indiv-save").addEventListener("click", () => {
+          if (this.activeEditLecId) {
+            const list = this.getIndivConfigInputs();
+            GameState.saveIndividualChecklist(this.activeEditLecId, list);
+            indivBackdrop.classList.remove("active");
+          }
+        });
+      },
+
+      renderGlobalConfigItems() {
+        const container = document.getElementById("global-config-items-container");
+        container.innerHTML = "";
+        GameState.state.checklistTemplate.forEach(item => {
+          const row = document.createElement("div");
+          row.className = "config-item-row";
+          row.innerHTML = `
+            <input type="text" value="${item.label}" class="item-label">
+            <input type="number" value="${item.xp}" class="item-xp">
+            <button class="config-btn-danger btn-delete-row" data-id="${item.id}">삭제</button>
+          `;
+          row.querySelector(".btn-delete-row").addEventListener("click", () => row.remove());
+          container.appendChild(row);
+        });
+      },
+
+      getGlobalConfigInputs() {
+        const container = document.getElementById("global-config-items-container");
+        const rows = container.querySelectorAll(".config-item-row");
+        const list = [];
+        rows.forEach((r, idx) => {
+          const label = r.querySelector(".item-label").value.trim();
+          const xp = parseInt(r.querySelector(".item-xp").value) || 10;
+          const deleteBtn = r.querySelector(".btn-delete-row");
+          const oldId = deleteBtn.dataset.id;
+          
+          list.push({
+            id: oldId.startsWith("custom_") ? oldId : `g_${idx}`,
+            label: label || "공부 수련",
+            xp: xp
+          });
+        });
+        return list;
+      },
+
+      openIndivConfig(lecId) {
+        this.activeEditLecId = lecId;
+        const lecData = LECTURES_DATA.find(l => l.id === lecId);
+        const stateLec = GameState.state.lectures[lecId];
+        if (!lecData || !stateLec) return;
+
+        document.getElementById("indiv-config-lec-title").innerText = lecData.title;
+        
+        const activeList = stateLec.checklist || GameState.state.checklistTemplate;
+        const container = document.getElementById("indiv-config-items-container");
+        container.innerHTML = "";
+        
+        activeList.forEach(item => {
+          const row = document.createElement("div");
+          row.className = "config-item-row";
+          row.innerHTML = `
+            <input type="text" value="${item.label}" class="item-label">
+            <input type="number" value="${item.xp}" class="item-xp">
+            <button class="config-btn-danger btn-delete-row" data-id="${item.id}">삭제</button>
+          `;
+          row.querySelector(".btn-delete-row").addEventListener("click", () => row.remove());
+          container.appendChild(row);
+        });
+
+        document.getElementById("indiv-config-backdrop").classList.add("active");
+      },
+
+      getIndivConfigInputs() {
+        const container = document.getElementById("indiv-config-items-container");
+        const rows = container.querySelectorAll(".config-item-row");
+        const list = [];
+        rows.forEach((r, idx) => {
+          const label = r.querySelector(".item-label").value.trim();
+          const xp = parseInt(r.querySelector(".item-xp").value) || 10;
+          const deleteBtn = r.querySelector(".btn-delete-row");
+          const oldId = deleteBtn.dataset.id;
+          
+          list.push({
+            id: oldId.startsWith("custom_") ? oldId : `i_${idx}`,
+            label: label || "개별 수련",
+            xp: xp
+          });
+        });
+        return list;
+      },
+
+      render() {
+        this.renderHeader();
+        this.renderBattleArena();
+        this.renderLectures();
+        this.renderStats();
+        this.renderForge();
+        this.renderAchievements();
+      },
+
+      renderHeader() {
+        const info = GameState.getLevelInfo();
+        
+        document.getElementById("profile-level").innerText = info.level;
+        document.getElementById("char-class-name").innerText = `학파: ${GameState.state.classSelected}`;
+        document.getElementById("xp-current").innerText = GameState.state.xp;
+        document.getElementById("xp-next").innerText = info.nextXp;
+        document.getElementById("xp-bar-fill").style.width = `${info.pct}%`;
+        
+        document.getElementById("avatar-svg-container").innerHTML = SVGS[GameState.state.classSelected];
+        
+        const titleTag = document.getElementById("char-equipped-title");
+        if (GameState.state.equippedTitle) {
+          const tDb = ACHIEVEMENT_TITLES[GameState.state.equippedTitle];
+          titleTag.innerText = tDb ? tDb.name : "칭호 없음";
+          titleTag.style.display = "inline-block";
+        } else {
+          titleTag.style.display = "none";
+        }
+
+        const examDate = new Date('2026-05-29T09:00:00');
+        const today = new Date();
+        const diffTime = examDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        document.getElementById("dday-val").innerText = diffDays > 0 ? `D-${diffDays}` : (diffDays === 0 ? "D-Day!" : `D+${Math.abs(diffDays)}`);
+      },
+
+      renderBattleArena() {
+        document.getElementById("char-hp-vals").innerText = `${GameState.state.hp}/${GameState.state.maxHp}`;
+        document.getElementById("char-hp-bar").style.width = `${(GameState.state.hp / GameState.state.maxHp) * 100}%`;
+        
+        document.getElementById("char-mp-vals").innerText = `${GameState.state.mp}/${GameState.state.maxMp}`;
+        document.getElementById("char-mp-bar").style.width = `${(GameState.state.mp / GameState.state.maxMp) * 100}%`;
+
+        const charFighter = document.getElementById("fighter-char");
+        if (GameState.state.hp <= 0) {
+          charFighter.classList.add("fainted");
+          document.getElementById("arena-char-svg").innerHTML = SVGS.Grave + SVGS.Ghost;
+        } else {
+          charFighter.classList.remove("fainted");
+          document.getElementById("arena-char-svg").innerHTML = SVGS[GameState.state.classSelected];
+        }
+        document.getElementById("arena-char-name").innerText = GameState.state.classSelected;
+
+        // Faint overlay display
+        document.getElementById("fainted-overlay").classList.toggle("active", GameState.state.hp <= 0);
+
+        const monster = MONSTERS_DB[GameState.state.currentMonsterKey];
+        if (monster) {
+          document.getElementById("arena-monster-name").innerText = monster.name;
+          document.getElementById("arena-monster-svg").innerHTML = monster.svg;
+          document.getElementById("monster-hp-vals").innerText = `${GameState.state.monsterHp}/${monster.maxHp}`;
+          document.getElementById("monster-hp-bar").style.width = `${(GameState.state.monsterHp / monster.maxHp) * 100}%`;
+          
+          const elemBadge = document.getElementById("arena-monster-element");
+          elemBadge.innerText = monster.elem;
+          elemBadge.className = `element-badge ${monster.elem.toLowerCase()}`;
+        }
+
+        ["q", "w", "e"].forEach(k => {
+          const cd = GameState.state.cooldowns[k];
+          const cdOverlay = document.getElementById(`skill-${k}-cooldown`);
+          if (cd > 0) {
+            cdOverlay.style.display = "flex";
+            cdOverlay.innerText = cd;
+          } else {
+            cdOverlay.style.display = "none";
+          }
+        });
+      },
+
+      renderLectures() {
+        const container = document.getElementById("lectures-container");
+        container.innerHTML = "";
+
+        let filtered = LECTURES_DATA.filter(l => {
+          if (this.currentChapterFilter !== "all" && l.chapterId !== this.currentChapterFilter) return false;
+          
+          const s = GameState.state.lectures[l.id];
+          const activeList = s.checklist || GameState.state.checklistTemplate;
+
+          if (this.filterIncomplete) {
+            const done = activeList.every(item => s.completed && s.completed[item.id]);
+            if (done) return false;
+          }
+          if (this.filterMemo && (!s.memo || s.memo.trim().length === 0)) return false;
+          
+          if (this.searchQuery) {
+            const matchesTitle = l.title.toLowerCase().includes(this.searchQuery);
+            const matchesProf = l.prof.toLowerCase().includes(this.searchQuery);
+            if (!matchesTitle && !matchesProf) return false;
+          }
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-disabled);">해당 던전 조건에 맞는 강의 카드가 없습니다.</div>`;
+          return;
+        }
+
+        filtered.forEach(l => {
+          const s = GameState.state.lectures[l.id];
+          const card = document.createElement("article");
+          card.className = "lecture-card";
+          card.dataset.id = l.id;
+          card.dataset.chapter = l.chapterId;
+          
+          const activeList = s.checklist || GameState.state.checklistTemplate;
+          let completedChecks = 0;
+          activeList.forEach(item => {
+            if (s.completed && s.completed[item.id]) completedChecks++;
+          });
+
+          if (completedChecks === activeList.length && activeList.length > 0) card.classList.add("completed");
+
+          const chInfo = CHAPTERS[l.chapterId];
+
+          // Dynamic checklist markup generation
+          let checklistHtml = "";
+          activeList.forEach(item => {
+            const isDone = !!(s.completed && s.completed[item.id]);
+            checklistHtml += `
+              <label class="check-label ${isDone ? 'active' : ''}">
+                <input type="checkbox" data-lec="${l.id}" data-act="${item.id}" ${isDone ? 'checked' : ''}>
+                <span>${item.label}</span>
+                <span class="xp-tag">+${item.xp}</span>
+              </label>
+            `;
+          });
+
+          card.innerHTML = `
+            <div class="card-meta">
+              <span class="chapter-badge ch${l.chapterId}">
+                ${chInfo.name}
+                <button class="lec-edit-gear-btn btn-open-card-edit" data-id="${l.id}" title="이 강의 카드 공부 수련 항목 개별 편집">⚙️ 개별 편집</button>
+              </span>
+              <span class="card-subtitle">${l.date} · ${l.period}교시</span>
+              <h3 class="card-title">${l.title}</h3>
+              <span class="card-subtitle">${l.prof} 교수</span>
+            </div>
+            
+            <div class="card-checklist">
+              ${checklistHtml}
+            </div>
+            
+            <div class="card-controls">
+              <div class="bonus-row">
+                <span>보너스 퀴즈 <span style="color:var(--gold);">+20XP</span></span>
+                <div class="bonus-btns">
+                  <div class="btn-small" data-lec="${l.id}" data-act="bonusQuiz" data-dir="minus">-</div>
+                  <span class="bonus-val">${s.bonusQuiz || 0}</span>
+                  <div class="btn-small" data-lec="${l.id}" data-act="bonusQuiz" data-dir="plus">+</div>
+                </div>
+              </div>
+              
+              <div class="bonus-row">
+                <span>보너스 회독 <span style="color:var(--gold);">+30XP</span></span>
+                <div class="bonus-btns">
+                  <div class="btn-small" data-lec="${l.id}" data-act="bonusReview" data-dir="minus">-</div>
+                  <span class="bonus-val">${s.bonusReview || 0}</span>
+                  <div class="btn-small" data-lec="${l.id}" data-act="bonusReview" data-dir="plus">+</div>
+                </div>
+              </div>
+              
+              <textarea class="card-memo" placeholder="핵심 병태생리 메모..." data-lec="${l.id}">${s.memo || ''}</textarea>
+            </div>
+          `;
+
+          // Bind card individual edit button
+          card.querySelector(".btn-open-card-edit").addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.openIndivConfig(e.target.dataset.id);
+          });
+
+          // Toggles listeners
+          card.querySelectorAll(".check-label input").forEach(chk => {
+            chk.addEventListener("change", (e) => {
+              const lecId = e.target.dataset.lec;
+              const act = e.target.dataset.act;
+              AppState.toggleActivity(lecId, act);
+            });
+          });
+
+          // Counter listeners
+          card.querySelectorAll(".btn-small").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+              const lecId = e.target.dataset.lec;
+              const act = e.target.dataset.act;
+              const dir = e.target.dataset.dir;
+              const delta = dir === "plus" ? 1 : -1;
+              AppState.changeBonus(lecId, act, delta);
+            });
+          });
+
+          // Memo listeners
+          card.querySelector(".card-memo").addEventListener("input", (e) => {
+            const lecId = e.target.dataset.lec;
+            AppState.setMemo(lecId, e.target.value);
+          });
+
+          container.appendChild(card);
+        });
+      },
+
+      renderStats() {
+        document.getElementById("gold-amount").innerText = GameState.state.gold;
+        document.getElementById("potions-count").innerText = GameState.state.potions;
+        document.getElementById("buy-potion-btn").innerText = "200 G";
+        
+        const trainingList = document.getElementById("stat-training-list");
+        trainingList.innerHTML = "";
+        
+        const friendlyStats = [
+          { key: "atk", name: "ATK (공격력)", desc: "기본 데미지 피해량 상승" },
+          { key: "int", name: "INT (학습 지능)", desc: "사냥 XP 추가 획득율 (%)" },
+          { key: "luck", name: "LUCK (수집 운)", desc: "골드 및 아이템 드롭율 (%)" },
+          { key: "crit", name: "CRIT (치명타)", desc: "2배 크리티컬 발생율 (%)" },
+          { key: "def", name: "DEF (가상 방어)", desc: "압박 데미지 가치 저항" }
+        ];
+
+        friendlyStats.forEach(stat => {
+          const val = GameState.getTotalStat(stat.key.toUpperCase());
+          const cost = 100 + (GameState.state.attributes[stat.key] || 0) * 12;
+          
+          const row = document.createElement("div");
+          row.className = "stat-upgrade-row";
+          row.title = stat.desc;
+          row.innerHTML = `
+            <span class="lbl">${stat.name}</span>
+            <span class="val">${val}${stat.key === "int" || stat.key === "luck" || stat.key === "crit" ? '%' : ''}</span>
+            <button class="upgrade-btn" data-attr="${stat.key}">${cost} G</button>
+          `;
+          
+          row.querySelector(".upgrade-btn").addEventListener("click", (e) => {
+            GameState.upgradeAttribute(e.target.dataset.attr);
+          });
+          trainingList.appendChild(row);
+        });
+
+        document.getElementById("training-gold-val").innerText = `보유: ${GameState.state.gold} G`;
+      },
+
+      renderForge() {
+        const container = document.getElementById("equip-forge-container");
+        container.innerHTML = "";
+
+        Object.keys(GameState.state.equipment).forEach(k => {
+          const item = GameState.state.equipment[k];
+          if (!item) return;
+
+          const levelStat = item.baseStat + (item.level - 1) * 3;
+          const goldCost = 50 + item.level * 20;
+
+          const box = document.createElement("div");
+          box.className = `equip-item-box ${item.grade.toLowerCase()}`;
+          box.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="equip-icon">${item.icon}</div>
+              <div>
+                <div class="equip-name">${item.name} +${item.level}</div>
+                <div style="font-size:8px; color:var(--text-secondary); font-weight:700;">[${item.grade}]</div>
+              </div>
+            </div>
+            <div class="equip-stat">${item.statName}: +${levelStat}${item.statName === 'INT' || item.statName === 'CRIT' ? '%' : ''}</div>
+            <button class="forge-btn" data-slot="${item.slot}">강화 [${goldCost}G]</button>
+          `;
+
+          box.querySelector(".forge-btn").addEventListener("click", (e) => {
+            GameState.forgeEquipment(e.target.dataset.slot);
+          });
+
+          container.appendChild(box);
+        });
+
+        const matsContainer = document.getElementById("materials-inv-container");
+        matsContainer.innerHTML = `
+          <span>📜 해부학 조각: <b style="color:var(--gold);">${GameState.state.materials.anatomy_page || 0}</b></span>
+          <span>🔮 음파 리본: <b style="color:var(--gold);">${GameState.state.materials.acoustic_ribbon || 0}</b></span>
+          <span>⚡ 전극 구리: <b style="color:var(--gold);">${GameState.state.materials.ecg_copper || 0}</b></span>
+          <span>❤️ 심장 에센스: <b style="color:var(--gold);">${GameState.state.materials.epic_heart || 0}</b></span>
+        `;
+      },
+
+      renderAchievements() {
+        const container = document.getElementById("achievements-container");
+        container.innerHTML = "";
+
+        ACHIEVEMENT_DB.forEach(a => {
+          const done = GameState.state.achievements.includes(a.id);
+          
+          const el = document.createElement("div");
+          el.className = `achieve-item ${done ? 'completed' : ''}`;
+          el.innerHTML = `
+            <div class="achieve-icon">🏆</div>
+            <div class="achieve-details">
+              <div class="achieve-name">${a.name}</div>
+              <div class="achieve-desc">${a.desc}</div>
+            </div>
+            <div class="achieve-reward">보상: ${a.reward}</div>
+          `;
+          container.appendChild(el);
+        });
+      },
+
+      populateTitles() {
+        const dropdown = document.getElementById("title-equip-dropdown");
+        dropdown.innerHTML = `<option value="">칭호 장착 해제</option>`;
+        
+        GameState.state.achievements.forEach(achId => {
+          const tDb = ACHIEVEMENT_TITLES[achId];
+          if (tDb) {
+            const opt = document.createElement("option");
+            opt.value = achId;
+            opt.innerText = `${tDb.name} (${tDb.bonus})`;
+            if (GameState.state.equippedTitle === achId) {
+              opt.selected = true;
+            }
+            dropdown.appendChild(opt);
+          }
+        });
+      },
+
+      showBossDefeatedModal(bossKey) {
+        const data = BOSS_MODAL_TRIVIA[bossKey];
+        if (!data) return;
+
+        document.getElementById("boss-name").innerText = data.name;
+        document.getElementById("boss-svg-icon").innerHTML = data.svg;
+        document.getElementById("boss-quote").innerHTML = `${data.quote}<br><span style="font-size:11px; color:var(--text-secondary); font-style:normal;">${data.meaning}</span>`;
+        document.getElementById("boss-trivia").innerText = data.desc;
+        
+        const modal = document.getElementById("boss-modal-backdrop");
+        modal.classList.add("active");
+        
+        AudioEngine.playBossDefeat();
+      },
+
+      createDamageFloater(amount, isCrit, extraMsg) {
+        const arena = document.getElementById("arena-combat-box");
+        if (!arena) return;
+
+        const floater = document.createElement("div");
+        floater.className = `damage-floater ${isCrit ? 'crit' : ''} ${extraMsg || ''}`;
+        
+        const x = 65 + Math.random() * 15;
+        const y = 30 + Math.random() * 25;
+        
+        floater.style.left = `${x}%`;
+        floater.style.top = `${y}%`;
+        
+        let label = amount;
+        if (extraMsg === "weakness") label += " WEAKNESS!";
+        if (extraMsg === "resisted") label += " RESIST";
+        if (isCrit) label = `💥 ${label}`;
+        
+        floater.innerText = label;
+        
+        arena.appendChild(floater);
+        setTimeout(() => floater.remove(), 800);
+      },
+
+      triggerAttackAnimation() {
+        const fighter = document.getElementById("fighter-char");
+        const body = document.getElementById("app-body-container");
+        
+        fighter.classList.add("attacking");
+        setTimeout(() => {
+          fighter.classList.remove("attacking");
+        }, 150);
+
+        body.classList.add("shake");
+        setTimeout(() => body.classList.remove("shake"), 150);
+      },
+
+      triggerMonsterHurtAnimation() {
+        const monsterEl = document.getElementById("fighter-monster");
+        if (!monsterEl) return;
+        monsterEl.classList.add("hurt");
+        setTimeout(() => {
+          monsterEl.classList.remove("hurt");
+        }, 300);
+      },
+
+      triggerSkillOverlay(key) {
+        const overlay = document.getElementById("skill-flash-screen");
+        if (!overlay) return;
+        
+        overlay.className = "skill-flash-overlay";
+        overlay.classList.add(`${key}-active`);
+        
+        setTimeout(() => {
+          overlay.className = "skill-flash-overlay";
+        }, 800);
+      },
+
+      triggerLevelUpAnimation() {
+        const avatar = document.querySelector(".avatar-wrapper");
+        avatar.style.animation = "pulse 0.5s infinite alternate";
+        
+        for (let i = 0; i < 30; i++) {
+          const p = document.createElement("div");
+          p.style.position = "fixed";
+          p.style.left = `${50 + (Math.random() - 0.5) * 40}%`;
+          p.style.top = `${50 + (Math.random() - 0.5) * 40}%`;
+          p.style.width = `${4 + Math.random() * 6}px`;
+          p.style.height = `${4 + Math.random() * 6}px`;
+          p.style.borderRadius = "50%";
+          p.style.background = Math.random() > 0.5 ? "var(--gold)" : "var(--crimson-light)";
+          p.style.pointerEvents = "none";
+          p.style.zIndex = "3000";
+          p.style.transition = "all 1.2s cubic-bezier(0.25, 1, 0.5, 1)";
+          
+          document.body.appendChild(p);
+          
+          setTimeout(() => {
+            p.style.transform = `translate(${(Math.random() - 0.5) * 300}px, ${(Math.random() - 0.5) * 300}px)`;
+            p.style.opacity = "0";
+            setTimeout(() => p.remove(), 1200);
+          }, 50);
+        }
+
+        setTimeout(() => {
+          avatar.style.animation = "";
+        }, 1500);
+      },
+
+      showToast(title, body) {
+        const container = document.getElementById("toast-container");
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.innerHTML = `
+          <div class="toast-title">${title}</div>
+          <div class="toast-text">${body}</div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add("active"), 50);
+        setTimeout(() => {
+          toast.classList.remove("active");
+          setTimeout(() => toast.remove(), 400);
+        }, 4000);
+      }
+    };
+
+    // --- State Engine Legacy v1 mapping helpers ---
+    const AppState = {
+      getLevelInfo() {
+        return GameState.getLevelInfo();
+      },
+      toggleActivity(lecId, actId) {
+        GameState.toggleActivity(lecId, actId);
+      },
+      changeBonus(lecId, act, delta) {
+        GameState.changeBonus(lecId, act, delta);
+      },
+      setMemo(lecId, txt) {
+        GameState.setMemo(lecId, txt);
+      }
+    };
+
+    // --- Pomodoro ---
+    const Pomodoro = {
+      intervalId: null,
+      remainingSeconds: 25 * 60,
+      isRunning: false,
+
+      init() {
+        const mode = GameState.state.pomodoroMode || "focus25";
+        this.setMode(mode);
+
+        const target = GameState.state.pomodoroTargetEpoch;
+        if (target) {
+          const diff = Math.floor((target - Date.now()) / 1000);
+          if (diff > 0) {
+            this.remainingSeconds = diff;
+            this.start(true);
+          } else {
+            this.handleCompletion();
+          }
+        }
+      },
+
+      setMode(mode) {
+        GameState.state.pomodoroMode = mode;
+        this.remainingSeconds = mode === "focus25" ? 25 * 60 : 50 * 60;
+        this.updateDisplay();
+
+        document.getElementById("mode-focus25-btn").classList.toggle("active", mode === "focus25");
+        document.getElementById("mode-focus50-btn").classList.toggle("active", mode === "focus50");
+      },
+
+      start(isResume = false) {
+        if (this.isRunning) return;
+        AudioEngine.init();
+        this.isRunning = true;
+        
+        if (!isResume) {
+          GameState.state.pomodoroTargetEpoch = Date.now() + this.remainingSeconds * 1000;
+          GameState.save();
+        }
+
+        this.intervalId = setInterval(() => {
+          this.remainingSeconds--;
+          this.updateDisplay();
+
+          if (this.remainingSeconds <= 0) {
+            this.handleCompletion();
+          }
+        }, 1000);
+
+        this.updateButtons();
+      },
+
+      stop() {
+        if (!this.isRunning) return;
+        this.isRunning = false;
+        clearInterval(this.intervalId);
+        
+        GameState.state.pomodoroTargetEpoch = null;
+        GameState.save();
+        
+        this.updateButtons();
+      },
+
+      reset() {
+        this.stop();
+        this.setMode(GameState.state.pomodoroMode);
+      },
+
+      handleCompletion() {
+        this.stop();
+        
+        GameState.state.pomodoroSessions = (GameState.state.pomodoroSessions || 0) + 1;
+        GameState.state.gold += 50; 
+        GameState.state.mp = GameState.state.maxMp; 
+        
+        if (GameState.state.classSelected === "Cardiologist") {
+          const mats = ["anatomy_page", "acoustic_ribbon", "ecg_copper"];
+          const picked = mats[Math.floor(Math.random() * mats.length)];
+          GameState.state.materials[picked]++;
+          UI.showToast("🎁 클래스 혜택 발동!", `순환기내과의 보너스: 재료 아이템 [${picked}] 획득!`);
+        }
+
+        GameState.recalculateTotalXP();
+        GameState.checkLevelUp();
+        GameState.save();
+
+        AudioEngine.playTimerComplete();
+        UI.showToast("🧘 수련 성취 완료!", "포모도로 세션 수련이 끝났습니다! 마나가 채워지며 +5 XP, +50G 획득.");
+        this.reset();
+        UI.render();
+      },
+
+      updateDisplay() {
+        const m = Math.floor(this.remainingSeconds / 60);
+        const s = this.remainingSeconds % 60;
+        const str = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        document.getElementById("timer-display").innerText = str;
+      },
+
+      updateButtons() {
+        const btn = document.getElementById("timer-start-btn");
+        btn.innerText = this.isRunning ? "수련 중" : "수련 시작";
+        btn.style.opacity = this.isRunning ? "0.7" : "1";
+        btn.style.pointerEvents = this.isRunning ? "none" : "auto";
+      }
+    };
+
+    // --- Launch ---
+    window.addEventListener("DOMContentLoaded", () => {
+      GameState.init();
+      
+      document.querySelectorAll(".class-select-card").forEach(card => {
+        card.addEventListener("click", () => {
+          const cls = card.dataset.class;
+          GameState.selectClass(cls);
+        });
+      });
+
+      document.getElementById("faint-potion-btn").addEventListener("click", () => {
+        if (GameState.state.potions > 0) {
+          GameState.usePotion();
+        } else {
+          UI.showToast("❌ 물약 없음", "골드로 에스프레소 포션을 우선 구매하십시오.");
+        }
+      });
+      
+      Pomodoro.init();
+    });
+  </script>
+
+</body>
+</html>
