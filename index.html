@@ -3343,8 +3343,21 @@
       },
 
       save() {
-        localStorage.setItem("circ-rpg-state-v2", JSON.stringify(this.state));
-        localStorage.setItem("circ-rpg-history-v1", JSON.stringify(this.history));
+        try {
+          localStorage.setItem("circ-rpg-state-v2", JSON.stringify(this.state));
+          localStorage.setItem("circ-rpg-history-v1", JSON.stringify(this.history));
+        } catch (e) {
+          // 용량 초과 시 히스토리를 줄여 핵심 진행상황만이라도 저장 시도
+          try {
+            if (this.history && this.history.events && this.history.events.length > 100) {
+              this.history.events = this.history.events.slice(-100);
+            }
+            localStorage.setItem("circ-rpg-state-v2", JSON.stringify(this.state));
+            localStorage.setItem("circ-rpg-history-v1", JSON.stringify(this.history));
+          } catch (err) {
+            console.warn("진행상황 저장 실패 (브라우저 저장공간 확인 필요):", err);
+          }
+        }
       },
 
       logEvent(event) {
@@ -4791,6 +4804,14 @@
       });
       
       Pomodoro.init();
+
+      // 탭을 닫거나 백그라운드로 전환할 때 마지막 진행상황을 확실히 저장
+      const flushSave = () => { try { GameState.save(); } catch (e) {} };
+      window.addEventListener("pagehide", flushSave);
+      window.addEventListener("beforeunload", flushSave);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") flushSave();
+      });
     });
   </script>
 
